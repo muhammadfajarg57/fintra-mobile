@@ -4649,51 +4649,51 @@ alert("Pendaftaran berhasil! Selamat datang di finMo.");
         }
     });
 
+    function hideSplashScreen() {
+        const splash = document.getElementById('app-splash-screen');
+        if (splash) {
+            splash.classList.add('fade-out');
+            setTimeout(() => {
+                splash.style.display = 'none';
+            }, 500);
+        }
+    }
+
     window.addEventListener('popstate', (event) => {
         if (event.state && event.state.page) {
             MapsTo(event.state.page, false);
         } else {
             const hashPage = window.location.hash.replace('#', '');
-            if (hashPage && auth.currentUser) {
+            if (hashPage && window.currentUser) {
                 MapsTo(hashPage, false);
-            } else if (!auth.currentUser && hashPage !== 'signup') {
+            } else if (!window.currentUser && hashPage !== 'signup') {
                 MapsTo('signin', false);
             }
         }
     });
 
-    // Handle Google redirect result on page load
-    getRedirectResult(auth).then(async (result) => {
-        if (result && result.user) {
-            console.log('Google redirect sign-in successful:', result.user.email);
-            await handleGoogleUserProfile(result.user);
+    checkAuthSession().then((user) => {
+        const hashPage = window.location.hash.replace('#', '');
+        if (user) {
+            if (hashPage === 'signin' || hashPage === 'signup' || hashPage === 'hello' || !hashPage) {
+                MapsTo('dashboard', false);
+            } else {
+                MapsTo(hashPage, false);
+            }
+        } else {
+            if (hashPage === 'signup') {
+                MapsTo('signup', false);
+            } else if (hashPage === 'hello') {
+                MapsTo('hello', false);
+            } else {
+                MapsTo('signin', false);
+            }
         }
-    }).catch((err) => {
-        if (err.code && err.code !== 'auth/popup-closed-by-user') {
-            console.error('Redirect result error:', err);
-            alert('Login Google gagal: ' + (err.message || err));
-        }
+        hideSplashScreen();
+    }).catch(err => {
+        console.error('Auth session check error:', err);
+        hideSplashScreen();
     });
-
-    
-checkAuthSession().then((user) => {
-    const hashPage = window.location.hash.replace('#', '');
-    if (user) {
-        if (hashPage === 'signin' || hashPage === 'signup' || hashPage === 'hello' || !hashPage) {
-            MapsTo('dashboard', false);
-        } else {
-            MapsTo(hashPage, false);
-        }
-    } else {
-        if (hashPage === 'signup') {
-            MapsTo('signup', false);
-        } else if (hashPage === 'hello') {
-            MapsTo('hello', false);
-        } else {
-            MapsTo('signin', false);
-        }
-    }
-});
 }
 
 if (document.readyState === 'loading') {
