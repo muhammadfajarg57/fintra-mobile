@@ -1,0 +1,2025 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+    <title>finMo</title>
+    
+    <!-- PWA Setup -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=3">
+    <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png?v=3">
+    <meta name="apple-mobile-web-app-title" content="finMo">
+    <meta name="theme-color" content="#faf8ff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    
+    <!-- Preconnect for faster loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    
+    <!-- Inline critical splash screen CSS to avoid white blank page -->
+    <style id="splash-critical-css">
+        body { margin: 0; background: #faf8ff; }
+        #app-splash-screen {
+            position: fixed; inset: 0; z-index: 99999;
+            display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #faf8ff 0%, #eaedff 100%);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        #app-splash-screen.fade-out {
+            opacity: 0; transform: scale(1.05); pointer-events: none;
+        }
+        .splash-logo-wrap {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .splash-infinity-svg {
+            width: 100px; height: 50px;
+            filter: drop-shadow(0 8px 24px rgba(14, 165, 233, 0.3));
+            animation: splash-pulse 3.5s ease-in-out infinite;
+        }
+        .stop-color-1 { animation: flow-c1 4s ease-in-out infinite; }
+        .stop-color-2 { animation: flow-c2 4s ease-in-out infinite; }
+        .stop-color-3 { animation: flow-c3 4s ease-in-out infinite; }
+
+        @keyframes flow-c1 {
+            0%, 100% { stop-color: #1e40af; }
+            33% { stop-color: #0ea5e9; }
+            66% { stop-color: #84cc16; }
+        }
+        @keyframes flow-c2 {
+            0%, 100% { stop-color: #0ea5e9; }
+            33% { stop-color: #84cc16; }
+            66% { stop-color: #1e40af; }
+        }
+        @keyframes flow-c3 {
+            0%, 100% { stop-color: #84cc16; }
+            33% { stop-color: #1e40af; }
+            66% { stop-color: #0ea5e9; }
+        }
+        @keyframes splash-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+    </style>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <style>
+        /* Modern Rounded Icons (Normal Weight) */
+        @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0');
+        
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Rounded' !important;
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Minimalist Scrollbar */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+
+        /* Dynamic & Smooth Transitions */
+        .transition-all { 
+            transition-duration: 400ms; 
+            transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .transition-transform {
+            transition-duration: 400ms;
+            transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .transition-colors {
+            transition-duration: 300ms;
+        }
+
+        /* Elegant Gradient Buttons */
+        .bg-primary.text-white,
+        .bg-primary.text-on-primary {
+            background: linear-gradient(135deg, #1e40af 0%, #0ea5e9 50%, #84cc16 100%) !important;
+            background-size: 200% 200% !important;
+            animation: gradient-shift 5s ease infinite !important;
+            border: none !important;
+        }
+        
+        .bg-primary.text-white:hover,
+        .bg-primary.text-on-primary:hover {
+            opacity: 0.9 !important;
+            transform: scale(1.02);
+            box-shadow: 0 10px 25px rgba(14, 165, 233, 0.4) !important;
+        }
+        
+        .bg-primary.text-white:active,
+        .bg-primary.text-on-primary:active {
+            transform: scale(0.97) !important;
+        }
+
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes custom-bounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-15px) scale(1.05); }
+        }
+        
+        .animate-bounce-custom {
+            animation: custom-bounce 2s ease-in-out infinite;
+        }
+
+        /* Custom glow effects and shadows from design */
+        .ambient-shadow {
+            box-shadow: 0 4px 12px rgba(67, 0, 225, 0.05);
+        }
+        
+        .soft-shadow {
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+        }
+        
+        .dp-item {
+            height: 40px;
+            line-height: 40px;
+            font-size: 16px;
+            font-weight: 500;
+            color: #787588;
+            scroll-snap-align: center;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+        }
+        .dp-item.active {
+            color: #0284c7;
+            font-weight: 800;
+            font-size: 20px;
+            transform: scale(1.05);
+        }
+        
+        /* Subtle glow on focus for inputs */
+        .input-glow:focus-within {
+            box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2);
+            border-color: #0284c7;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        /* ===== HELLO ANIMATION (iPhone-style handwriting) ===== */
+        @keyframes hello-stroke {
+            0% { stroke-dashoffset: 800; }
+            100% { stroke-dashoffset: 0; }
+        }
+        @keyframes hello-fade-in-up {
+            0% { opacity: 0; transform: translateY(20px) scale(0.9); }
+            60% { opacity: 1; transform: translateY(-5px) scale(1.02); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes hello-glow-pulse {
+            0%, 100% { filter: drop-shadow(0 0 8px rgba(2, 132, 199, 0.3)); }
+            50% { filter: drop-shadow(0 0 20px rgba(2, 132, 199, 0.6)); }
+        }
+        @keyframes hello-bg-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes hello-subtitle-fade {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        #hello-screen {
+            background: linear-gradient(135deg, #faf8ff 0%, #e0f2fe 30%, #f0fdf4 60%, #faf8ff 100%);
+            background-size: 300% 300%;
+            animation: hello-bg-shift 8s ease infinite;
+        }
+        #hello-screen .hello-text-svg {
+            animation: hello-stroke 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards,
+                       hello-glow-pulse 2s ease-in-out 1.8s infinite;
+        }
+        #hello-screen .hello-text-svg path {
+            stroke-dasharray: 800;
+            stroke-dashoffset: 800;
+            animation: hello-stroke 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        #hello-screen .hello-cursive {
+            animation: hello-fade-in-up 1s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+        }
+        #hello-screen .hello-subtitle {
+            animation: hello-subtitle-fade 0.8s ease-out 1.2s both;
+        }
+
+        /* ===== Page transition ===== */
+        .page-container {
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+        .page-container.page-entering {
+            opacity: 0; transform: translateY(8px);
+        }
+        .page-container.page-visible {
+            opacity: 1; transform: translateY(0);
+        }
+
+        /* ===== Prevent zoom ===== */
+        html { touch-action: manipulation; }
+        * { -webkit-tap-highlight-color: transparent; }
+
+        /* ===== Print Styles ===== */
+        @media print {
+            body > *:not(#print-receipt-container) {
+                display: none !important;
+            }
+            #print-receipt-container {
+                display: block !important;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            @page {
+                margin: 0;
+                size: auto;
+            }
+        }
+    </style>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#0284c7",
+                        "on-primary": "#ffffff",
+                        "primary-container": "#e0f2fe",
+                        "on-primary-container": "#0369a1",
+                        "inverse-primary": "#7dd3fc",
+                        "secondary": "#5d5f60",
+                        "on-secondary": "#ffffff",
+                        "secondary-container": "#dfdfe1",
+                        "on-secondary-container": "#616364",
+                        "tertiary": "#474855",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-container": "#5f606d",
+                        "on-tertiary-container": "#dcdbeb",
+                        "background": "#faf8ff",
+                        "on-background": "#131b2e",
+                        "surface": "#faf8ff",
+                        "surface-dim": "#d2d9f4",
+                        "surface-bright": "#faf8ff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#f2f3ff",
+                        "surface-container": "#eaedff",
+                        "surface-container-high": "#e2e7ff",
+                        "surface-container-highest": "#dae2fd",
+                        "on-surface": "#131b2e",
+                        "on-surface-variant": "#474557",
+                        "outline": "#787588",
+                        "outline-variant": "#c9c4da",
+                        "surface-variant": "#dae2fd",
+                        "error": "#ba1a1a",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a",
+                        "primary-fixed": "#e5deff",
+                        "primary-fixed-dim": "#c8bfff",
+                        "on-primary-fixed": "#190064",
+                        "on-primary-fixed-variant": "#4100db",
+                        "secondary-fixed": "#e2e2e3",
+                        "secondary-fixed-dim": "#c6c6c7",
+                        "on-secondary-fixed": "#1a1c1d",
+                        "on-secondary-fixed-variant": "#454748",
+                        "tertiary-fixed": "#e2e1f1",
+                        "tertiary-fixed-dim": "#c6c5d4",
+                        "on-tertiary-fixed": "#191b26",
+                        "on-tertiary-fixed-variant": "#454652",
+                        "success-green": "#10B981",
+                        "danger-red": "#EF4444",
+                        "accent-blue": "#E0F2FE",
+                        "accent-orange": "#FFF7ED",
+                        "accent-indigo": "#EEF2FF",
+                        // compatibility aliases
+                        "success": "#10B981",
+                        "success-container": "#f0fdf4",
+                        "warning": "#f59e0b",
+                        "warning-container": "#fffbeb"
+                    },
+                    "fontFamily": {
+                        "sans": ["Inter", "system-ui", "sans-serif"],
+                        "heading": ["Plus Jakarta Sans", "sans-serif"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "display-currency": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "display-currency": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "headline-md": ["18px", { "lineHeight": "24px", "fontWeight": "600" }]
+                    },
+                    "backgroundImage": {
+                        "gradient-ocean": "linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)",
+                        "gradient-ocean-hover": "linear-gradient(135deg, #0369a1 0%, #0284c7 100%)",
+                        "gradient-ocean-container": "linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(14, 165, 233, 0.08) 100%)",
+                        "gradient-aurora": "linear-gradient(135deg, #0ea5e9 0%, #84cc16 100%)",
+                        "gradient-success": "linear-gradient(135deg, #10b981 0%, #14b8a6 100%)",
+                        "gradient-premium": "linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)",
+                        "gradient-premium-hover": "linear-gradient(135deg, #0369a1 0%, #0284c7 100%)",
+                        "gradient-subtle": "linear-gradient(to bottom, #faf8ff, #eaedff)"
+                    },
+                    "boxShadow": {
+                        "card": "0 2px 12px rgba(15, 23, 42, 0.04), 0 4px 24px rgba(15, 23, 42, 0.03)",
+                        "float": "0 8px 30px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.03)",
+                        "glow": "0 8px 25px rgba(2, 132, 199, 0.25)",
+                        "soft-shadow": "0 4px 12px rgba(15, 23, 42, 0.08)",
+                        "ambient-shadow": "0 4px 12px rgba(2, 132, 199, 0.05)"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.5rem",
+                        "sm": "0.25rem",
+                        "md": "0.75rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "2xl": "1.25rem",
+                        "3xl": "1.5rem"
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans antialiased min-h-screen relative flex flex-col selection:bg-primary-container selection:text-primary overflow-x-hidden">
+
+    <div id="print-receipt-container" class="hidden"></div>
+
+    <!-- Splash Screen (Inline, instant - prevents white blank page) -->
+    <div id="app-splash-screen">
+        <div class="splash-logo-wrap">
+            <svg viewBox="0 0 120 60" class="splash-infinity-svg" fill="none">
+                <defs>
+                    <linearGradient id="gSplashFlow" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" class="stop-color-1" />
+                        <stop offset="50%" class="stop-color-2" />
+                        <stop offset="100%" class="stop-color-3" />
+                    </linearGradient>
+                </defs>
+                <path d="M 35 10 A 20 20 0 1 0 35 50 C 55 50 65 10 85 10 A 20 20 0 1 1 85 50 C 65 50 55 10 35 10 Z" stroke="url(#gSplashFlow)" stroke-width="16" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Layout Wrapper -->
+    <div class="flex min-h-screen w-full relative">
+        
+        <!-- Sidebar (PC/Desktop Only) -->
+        <aside id="desktop-sidebar" class="hidden md:flex flex-col w-64 bg-surface border-r border-outline-variant/50 h-screen sticky top-0 p-5 shrink-0 z-40">
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-2 mb-8 px-2">
+                <svg viewBox="0 0 120 60" class="w-12 h-6 drop-shadow-sm" fill="none">
+                    <defs>
+                        <linearGradient id="gLogo1" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stop-color="#1e40af"/>
+                            <stop offset="50%" stop-color="#0ea5e9"/>
+                            <stop offset="100%" stop-color="#84cc16"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M 35 10 A 20 20 0 1 0 35 50 C 55 50 65 10 85 10 A 20 20 0 1 1 85 50 C 65 50 55 10 35 10 Z" stroke="url(#gLogo1)" stroke-width="16" stroke-linejoin="round" stroke-linecap="round"/>
+                </svg>
+                <span class="font-['Poppins',sans-serif] font-bold italic text-2xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1e40af] via-[#0ea5e9] to-[#84cc16] pb-1 leading-normal">finmo</span>
+            </div>
+            
+            <!-- Navigation Links -->
+            <nav class="flex-1 space-y-2 flex flex-col h-full overflow-y-auto no-scrollbar py-1 px-1">
+                <div class="space-y-1 pb-4">
+                    <button id="top-nav-home" class="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-on-surface-variant hover:text-primary hover:bg-secondary-container transition-all">
+                        <span class="material-symbols-outlined text-[22px]">home</span> Home
+                    </button>
+                    <button id="top-nav-transactions" class="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-on-surface-variant hover:text-primary hover:bg-secondary-container transition-all">
+                        <span class="material-symbols-outlined text-[22px]">receipt_long</span> Transactions
+                    </button>
+                    <button id="top-nav-partners" class="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-on-surface-variant hover:text-primary hover:bg-secondary-container transition-all">
+                        <span class="material-symbols-outlined text-[22px]">handshake</span> Partners
+                    </button>
+                    <button id="sidebar-scan-nota" onclick="document.getElementById('btn-scan-nota').click()" class="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-on-surface-variant hover:text-primary hover:bg-secondary-container transition-all">
+                        <span class="material-symbols-outlined text-[22px]">photo_camera</span> Scan Nota AI
+                    </button>
+                    <button id="sidebar-kasir-pos" onclick="document.getElementById('btn-buka-kasir').click()" class="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-on-surface-variant hover:text-primary hover:bg-secondary-container transition-all">
+                        <span class="material-symbols-outlined text-[22px]">point_of_sale</span> Kasir POS
+                    </button>
+                    <button id="sidebar-stok-produk" onclick="document.getElementById('btn-stok-produk').click()" class="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-on-surface-variant hover:text-primary hover:bg-secondary-container transition-all">
+                        <span class="material-symbols-outlined text-[22px]">inventory_2</span> Stok Produk
+                    </button>
+                    <button id="sidebar-stok-bahan" onclick="document.getElementById('btn-stok-bahan-baku').click()" class="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-on-surface-variant hover:text-primary hover:bg-secondary-container transition-all">
+                        <span class="material-symbols-outlined text-[22px]">kitchen</span> Stok Bahan Baku
+                    </button>
+                    <button id="sidebar-laporan-keuangan" onclick="window.MapsTo('reports')" class="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-on-surface-variant hover:text-primary hover:bg-secondary-container transition-all">
+                        <span class="material-symbols-outlined text-[22px]">bar_chart</span> Laporan Keuangan
+                    </button>
+                    
+                    <button id="sidebar-transaksi-baru" onclick="document.getElementById('btn-transaksi-baru').click()" class="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-white bg-primary hover:bg-primary-hover shadow-md transition-all mt-4">
+                        <span class="material-symbols-outlined text-[22px]">add</span> Transaksi Baru
+                    </button>
+                </div>
+            </nav>
+            
+            <!-- Sidebar Footer / User Info (Acts as Profile Link) -->
+            <div onclick="window.MapsTo('profile')" class="mt-2 pt-4 border-t border-outline-variant/50 flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-secondary-container rounded-2xl transition-all group">
+                <div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-primary shadow-card group-hover:bg-primary group-hover:text-white transition-colors shrink-0">
+                    <span class="material-symbols-outlined text-[20px]">person</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                    <span class="text-xs font-bold text-on-surface truncate group-hover:text-primary transition-colors">Mitra finmo</span>
+                    <span class="text-[10px] text-on-surface-variant truncate">Premium Account</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Right Side: Content Area -->
+        <div class="flex-1 flex flex-col min-w-0 min-h-screen">
+            
+            <!-- Top Navigation Bar (Responsive) -->
+            <header id="top-app-bar"
+                class="w-full sticky top-0 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/50 z-30 h-16 flex items-center transition-all">
+                <div class="w-full px-4 sm:px-6 lg:px-8 flex justify-between items-center h-full">
+
+                    <!-- Mobile Left: Logo & Brand (hidden on md:) -->
+                    <div class="flex items-center gap-2 md:hidden">
+                        <svg viewBox="0 0 120 60" class="w-10 h-5 drop-shadow-sm" fill="none">
+                            <defs>
+                                <linearGradient id="gLogo2" x1="0" y1="0" x2="1" y2="0">
+                                    <stop offset="0%" stop-color="#1e40af"/>
+                                    <stop offset="50%" stop-color="#0ea5e9"/>
+                                    <stop offset="100%" stop-color="#84cc16"/>
+                                </linearGradient>
+                            </defs>
+                            <path d="M 35 10 A 20 20 0 1 0 35 50 C 55 50 65 10 85 10 A 20 20 0 1 1 85 50 C 65 50 55 10 35 10 Z" stroke="url(#gLogo2)" stroke-width="16" stroke-linejoin="round" stroke-linecap="round"/>
+                        </svg>
+                        <span class="font-['Poppins',sans-serif] font-bold italic text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1e40af] via-[#0ea5e9] to-[#84cc16] pb-1 leading-normal">finmo</span>
+                    </div>
+
+                    <!-- Desktop placeholder to keep right actions aligned -->
+                    <div class="hidden md:block"></div>
+
+                    <!-- Right: Actions -->
+                    <div class="flex items-center gap-2">
+                        <button id="btn-chat-ai" class="p-2 rounded-full hover:bg-outline-variant transition-colors text-primary flex items-center justify-center" title="Asisten AI finMo">
+                            <span class="material-symbols-outlined text-[24px]">smart_toy</span>
+                        </button>
+                        <button class="p-2 rounded-full hover:bg-outline-variant transition-colors text-on-surface-variant">
+                            <span class="material-symbols-outlined text-[24px]">notifications</span>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- App Content Wrapper -->
+            <main id="app-content" class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-28 md:pb-8 relative">
+                <div id="page-hello" class="page-container hidden animate-fade-in"></div>
+                <div id="page-signin" class="page-container hidden animate-fade-in"></div>
+                <div id="page-signup" class="page-container hidden animate-fade-in"></div>
+                                <div id="page-dashboard" class="page-container hidden animate-fade-in"></div>
+                <div id="page-transactions" class="page-container hidden animate-fade-in"></div>
+                <div id="page-pos" class="page-container hidden animate-fade-in"></div>
+                <div id="page-partners" class="page-container hidden animate-fade-in"></div>
+                <div id="page-products" class="page-container hidden animate-fade-in"></div>
+                <div id="page-rawmaterials" class="page-container hidden animate-fade-in"></div>
+                <div id="page-profile" class="page-container hidden animate-fade-in"></div>
+                <div id="page-reports" class="page-container hidden animate-fade-in"></div>
+                <div id="page-wallets" class="page-container hidden animate-fade-in"></div>
+                <div id="page-settings" class="page-container hidden animate-fade-in"></div>
+            </main>
+
+            <!-- Bottom Navigation Bar (Mobile Only) -->
+            <nav id="bottom-nav-bar"
+                class="fixed bottom-3 left-4 right-4 z-50 bg-surface/90 backdrop-blur-xl border border-outline-variant/30 flex justify-between items-center px-6 py-2.5 md:hidden shadow-lg rounded-full">
+                
+                <button id="nav-home"
+                    class="flex items-center justify-center text-on-surface-variant p-2 transition-colors rounded-full hover:bg-surface-container">
+                    <span class="material-symbols-outlined text-[26px]">home</span>
+                </button>
+                
+                <button id="nav-transactions"
+                    class="flex items-center justify-center text-on-surface-variant p-2 transition-colors rounded-full hover:bg-surface-container">
+                    <span class="material-symbols-outlined text-[26px]">receipt_long</span>
+                </button>
+
+                <!-- Floating POS Action Button -->
+                <div class="flex justify-center relative items-center w-12">
+                    <button id="nav-pos"
+                        class="absolute -top-10 flex items-center justify-center w-14 h-14 bg-gradient-ocean text-white rounded-full shadow-glow hover:scale-110 active:scale-95 transition-all duration-300 z-50 border-[5px] border-background box-content">
+                        <span class="material-symbols-outlined text-2xl">add</span>
+                    </button>
+                </div>
+
+                <button id="nav-partners"
+                    class="flex items-center justify-center text-on-surface-variant p-2 transition-colors rounded-full hover:bg-surface-container">
+                    <span class="material-symbols-outlined text-[26px]">handshake</span>
+                </button>
+                
+                <button id="nav-profile"
+                    class="flex items-center justify-center text-on-surface-variant p-2 transition-colors rounded-full hover:bg-surface-container">
+                    <span class="material-symbols-outlined text-[26px]">person</span>
+                </button>
+            </nav>
+            
+        </div>
+    </div>
+
+    <!-- MODALS -->
+    <!-- Pilih Aksi Modal -->
+    <div id="modal-pilih-aksi"
+        class="fixed inset-0 z-[60] bg-[#0f172a]/20 backdrop-blur-sm hidden flex items-end sm:items-center justify-center opacity-0 transition-opacity duration-300">
+        <div
+            class="bg-surface w-full sm:w-[400px] rounded-t-2xl sm:rounded-2xl p-4 transform translate-y-full sm:translate-y-0 transition-transform duration-300 shadow-float ">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-heading font-bold text-xl text-on-surface">Pilih Aksi</h3>
+                <button id="close-pilih-aksi" class="text-on-surface-variant hover:text-on-surface transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="flex flex-col gap-4">
+                <button id="btn-scan-nota"
+                    class="w-full flex items-center gap-4 p-4 rounded-2xl bg-[#e0f2fe] hover:bg-[#bae6fd] transition-colors group">
+                    <div
+                        class="w-12 h-12 rounded-full bg-[#0284c7] text-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                        <span class="material-symbols-outlined">photo_camera</span>
+                    </div>
+                    <div class="text-left">
+                        <h4 class="font-semibold text-on-surface text-[15px]">Scan Nota / Struk AI</h4>
+                        <p class="text-xs text-on-surface-variant mt-0.5">Catat otomatis dengan foto kamera & AI</p>
+                    </div>
+                </button>
+                <button id="btn-transaksi-baru"
+                    class="w-full flex items-center gap-4 p-4 rounded-2xl bg-secondary-container hover:bg-secondary-container/80 transition-colors /50 group">
+                    <div
+                        class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                        <span class="material-symbols-outlined">receipt_long</span>
+                    </div>
+                    <div class="text-left">
+                        <h4 class="font-semibold text-on-surface text-[15px]">Transaksi Baru</h4>
+                        <p class="text-xs text-on-surface-variant mt-0.5">Catat pengeluaran & pemasukan</p>
+                    </div>
+                </button>
+                <button id="btn-buka-kasir"
+                    class="w-full flex items-center gap-4 p-4 rounded-2xl bg-success-container hover:bg-success-container/80 transition-colors /50 group">
+                    <div
+                        class="w-12 h-12 rounded-full bg-success text-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                        <span class="material-symbols-outlined">point_of_sale</span>
+                    </div>
+                    <div class="text-left">
+                        <h4 class="font-semibold text-on-surface text-[15px]">Kasir POS</h4>
+                        <p class="text-xs text-on-surface-variant mt-0.5">Buka kasir untuk penjualan</p>
+                    </div>
+                </button>
+                <button id="btn-stok-produk"
+                    class="w-full flex items-center gap-4 p-4 rounded-2xl bg-[#fff3e0] hover:bg-[#ffe0b2] transition-colors /50 group">
+                    <div
+                        class="w-12 h-12 rounded-full bg-[#f57c00] text-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                        <span class="material-symbols-outlined">inventory_2</span>
+                    </div>
+                    <div class="text-left">
+                        <h4 class="font-semibold text-on-surface text-[15px]">Stok & Produk</h4>
+                        <p class="text-xs text-on-surface-variant mt-0.5">Kelola barang & restock</p>
+                    </div>
+                </button>
+                <button id="btn-stok-bahan-baku"
+                    class="w-full flex items-center gap-4 p-4 rounded-2xl bg-[#e8eaf6] hover:bg-[#c5cae9] transition-colors /50 group">
+                    <div
+                        class="w-12 h-12 rounded-full bg-[#3f51b5] text-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                        <span class="material-symbols-outlined">kitchen</span>
+                    </div>
+                    <div class="text-left">
+                        <h4 class="font-semibold text-on-surface text-[15px]">Stok Bahan Baku</h4>
+                        <p class="text-xs text-on-surface-variant mt-0.5">Kelola bahan baku produksi</p>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+        <!-- Modal Tambah Bahan Baku -->
+    <div id="modal-tambah-bahan-baku"
+        class="fixed inset-0 z-[70] bg-[#0f172a]/20 backdrop-blur-sm hidden flex items-center justify-center opacity-0 transition-opacity duration-300 p-4">
+        <div class="bg-surface w-full max-w-xl rounded-2xl p-6 md:p-8 shadow-float flex flex-col max-h-[95vh] overflow-y-auto no-scrollbar transform scale-95 transition-transform duration-300 ">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-heading font-bold text-xl text-on-surface">Beli Bahan Baku</h3>
+                <button id="close-tambah-bahan-baku" class="text-on-surface-variant hover:text-on-surface transition-colors p-1">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <form id="form-tambah-bahan-baku" class="flex flex-col gap-5">
+                <!-- Nama Bahan Baku -->
+                <div class="space-y-1.5">
+                    <label class="block text-sm font-semibold text-on-surface-variant">Nama Bahan Baku *</label>
+                    <select id="raw-nama" required class="w-full p-3.5 bg-surface-container-low border border-outline-variant/50 rounded-2xl focus:outline-none focus:border-primary transition-all text-sm font-bold text-on-surface cursor-pointer">
+                        <option value="">Pilih Bahan Baku...</option>
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+
+                <!-- Kategori & Satuan -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-semibold text-on-surface-variant">Kategori *</label>
+                        <select id="raw-kategori" required class="w-full p-3.5 bg-surface-container-low border border-outline-variant/50 rounded-2xl focus:outline-none focus:border-primary transition-all text-sm font-bold text-on-surface cursor-pointer">
+                            <option value="">Pilih...</option>
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-semibold text-on-surface-variant">Satuan *</label>
+                        <select id="raw-satuan" required class="w-full p-3.5 bg-surface-container-low border border-outline-variant/50 rounded-2xl focus:outline-none focus:border-primary transition-all text-sm font-bold text-on-surface cursor-pointer">
+                            <option value="">Pilih...</option>
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Jumlah & Total Harga -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-semibold text-on-surface-variant">Jumlah Beli *</label>
+                        <input type="number" id="raw-qty" required min="0.01" step="0.01" class="w-full p-3.5 bg-surface rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" placeholder="0">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-semibold text-on-surface-variant">Total Harga (Rp) *</label>
+                        <input type="text" id="raw-total-harga" required class="w-full p-3.5 bg-surface rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" placeholder="Rp 0">
+                    </div>
+                </div>
+
+                <!-- Harga Satuan (Auto-calculated, Read-only) -->
+                <div class="bg-surface-container-low rounded-2xl p-4 border border-outline-variant/30 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary text-[18px]">calculate</span>
+                            <span class="text-sm font-semibold text-on-surface-variant">Harga Satuan</span>
+                        </div>
+                        <span id="raw-harga-satuan-display" class="font-heading font-bold text-lg text-primary">Rp 0</span>
+                    </div>
+                    <div id="raw-harga-satuan-prev-container" class="hidden">
+                        <div class="flex items-center gap-1.5 text-xs text-on-surface-variant bg-surface rounded-xl px-3 py-1.5 border border-outline-variant/20">
+                            <span class="material-symbols-outlined text-[14px]">history</span>
+                            <span>Harga satuan sebelumnya: </span>
+                            <span id="raw-harga-satuan-prev" class="font-bold text-on-surface">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Potong Saldo Dari -->
+                <div class="space-y-1.5">
+                    <label class="block text-sm font-semibold text-on-surface-variant">Potong Saldo Dari *</label>
+                    <select id="raw-wallet-id" required class="w-full p-3.5 bg-surface rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                        <option value="">Pilih Rekening / Kas</option>
+                    </select>
+                </div>
+
+                <!-- Tanggal & Keterangan -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-semibold text-on-surface-variant">Tanggal *</label>
+                        <input type="date" id="raw-tanggal" required class="w-full p-3.5 bg-surface rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-semibold text-on-surface-variant">Keterangan</label>
+                        <input type="text" id="raw-keterangan" class="w-full p-3.5 bg-surface rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" placeholder="Opsional">
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="pt-4 border-t border-outline-variant/50">
+                    <button type="submit" id="btn-save-raw" class="w-full bg-primary text-white font-bold py-4 rounded-2xl hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30">
+                        Simpan Pembelian
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Record Transaction Modal -->
+    <div id="modal-record-transaction"
+        class="fixed inset-0 z-[70] bg-[#0f172a]/20 backdrop-blur-sm hidden flex items-center justify-center opacity-0 transition-opacity duration-300 p-3 sm:p-4">
+        <div
+            class="bg-surface w-full max-w-2xl rounded-3xl p-5 sm:p-7 shadow-float flex flex-col max-h-[92vh] overflow-y-auto no-scrollbar transform scale-95 transition-transform duration-300">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="font-heading font-bold text-lg sm:text-xl text-on-surface">Tambah Transaksi Baru</h3>
+                <button id="close-record-transaction"
+                    class="text-on-surface-variant hover:text-on-surface transition-colors p-1.5 rounded-full hover:bg-surface-container">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <!-- Tabs -->
+            <div id="tx-type-tabs" class="flex bg-secondary-container/60 rounded-2xl p-1 mb-5 gap-1">
+                <button type="button" data-type="out"
+                    class="tx-tab-btn flex-1 py-2.5 text-xs sm:text-sm bg-error-container text-error font-bold shadow-sm rounded-xl text-center transition-all">Pengeluaran</button>
+                <button type="button" data-type="in"
+                    class="tx-tab-btn flex-1 py-2.5 text-xs sm:text-sm text-on-surface-variant font-medium hover:text-on-surface text-center rounded-xl transition-all">Pemasukan</button>
+                <button type="button" data-type="transfer"
+                    class="tx-tab-btn flex-1 py-2.5 text-xs sm:text-sm text-on-surface-variant font-medium hover:text-on-surface text-center rounded-xl transition-all">Transfer</button>
+            </div>
+
+            <!-- Form -->
+            <form id="form-record-transaction" class="space-y-4">
+                <input type="hidden" id="tx-type" value="out">
+                <input type="hidden" id="tx-edit-id" value="">
+                
+                <div class="bg-surface rounded-[24px] border border-outline-variant/30 shadow-sm relative z-30 overflow-visible">
+                    <!-- Amount -->
+                    <div class="p-5 sm:p-6 border-b border-outline-variant/30 bg-primary/5 text-center rounded-t-[24px]">
+                        <label class="block text-xs font-bold text-primary mb-1.5 uppercase tracking-wider">Nominal Transaksi</label>
+                        <div class="flex items-center justify-center text-3xl sm:text-4xl font-heading font-bold text-primary">
+                            <span class="mr-1.5 text-xl sm:text-2xl">Rp</span>
+                            <input type="text" inputmode="numeric" id="tx-amount" required placeholder="0"
+                                class="w-auto max-w-[240px] bg-transparent border-none focus:outline-none p-0 text-3xl sm:text-4xl font-heading font-bold text-primary placeholder-primary/30 text-center">
+                        </div>
+                    </div>
+
+                    <div class="p-4 space-y-4">
+                        <!-- Category -->
+                        <div class="flex flex-col gap-1.5 relative z-40" id="container-tx-category">
+                            <label class="text-xs font-bold text-on-surface-variant" for="tx-category">Kategori Transaksi</label>
+                            <input type="hidden" id="tx-category" required>
+                            <div class="relative w-full" id="tx-category-wrapper">
+                                <input type="text" id="tx-category-selector" readonly placeholder="Pilih Kategori..." class="w-full bg-surface-container-low border border-outline-variant/50 rounded-[16px] p-3 pr-12 text-sm font-bold text-on-surface focus:outline-none focus:border-primary cursor-pointer transition-all">
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none transition-transform duration-200" id="tx-category-icon">expand_more</span>
+                                <div id="tx-category-dropdown" class="absolute top-full left-0 w-full mt-2 bg-surface rounded-[24px] shadow-[0_12px_40px_rgba(0,0,0,0.15)] border border-outline-variant/30 z-[90] hidden flex-col max-h-[290px] p-2.5 transition-all">
+                                    <div class="p-1 mb-1.5 sticky top-0 bg-surface z-10">
+                                        <div class="relative flex items-center">
+                                            <span class="material-symbols-outlined absolute left-3.5 text-on-surface-variant/60 text-[20px] pointer-events-none">search</span>
+                                            <input type="text" id="tx-category-search" placeholder="Cari kategori..." class="w-full bg-slate-100/90 border-none rounded-xl py-2.5 pl-10 pr-3 text-sm font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-on-surface-variant/50 transition-all">
+                                        </div>
+                                    </div>
+                                    <div class="overflow-y-auto no-scrollbar flex-1 flex flex-col gap-1 pr-0.5" id="tx-category-list">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Source Wallet -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-xs font-bold text-on-surface-variant" id="label-tx-wallet-source" for="tx-wallet-source">Sumber Dana (Kas / Bank)</label>
+                            <select id="tx-wallet-source" required class="w-full bg-surface-container-low border border-outline-variant/50 rounded-[16px] p-3 text-sm font-bold text-on-surface focus:outline-none focus:border-primary cursor-pointer">
+                                <option value="">Memuat...</option>
+                            </select>
+                        </div>
+
+                        <!-- Destination Wallet -->
+                        <div id="container-tx-wallet-dest" class="hidden flex-col gap-1.5">
+                            <label class="text-xs font-bold text-on-surface-variant" for="tx-wallet-destination">Ke Dompet / Rekening Tujuan</label>
+                            <select id="tx-wallet-destination" class="w-full bg-surface-container-low border border-outline-variant/50 rounded-[16px] p-3 text-sm font-bold text-on-surface focus:outline-none focus:border-primary cursor-pointer">
+                                <option value="">Pilih dompet tujuan...</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-surface rounded-[24px] overflow-hidden border border-outline-variant/30 shadow-sm p-4 space-y-4">
+                    <!-- Date -->
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-bold text-on-surface-variant" for="tx-date">Tanggal & Waktu Transaksi</label>
+                        <div class="relative w-full">
+                            <input type="text" id="tx-date" required readonly class="w-full bg-surface-container-low border border-outline-variant/50 rounded-[16px] p-3 pl-10 text-sm font-bold text-on-surface cursor-pointer focus:outline-none focus:border-primary">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] pointer-events-none">calendar_month</span>
+                        </div>
+                    </div>
+
+                    <!-- Note -->
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-bold text-on-surface-variant" for="tx-note">Catatan Transaksi (Opsional)</label>
+                        <textarea id="tx-note" placeholder="Tulis catatan (opsional)..." rows="2" class="w-full bg-surface-container-low border border-outline-variant/50 rounded-[16px] p-3 text-sm font-medium text-on-surface focus:outline-none focus:border-primary resize-none"></textarea>
+                    </div>
+                </div>
+
+                <!-- Receipt Upload -->
+                <div class="bg-surface rounded-2xl p-4 border border-outline-variant/30 flex items-center gap-4 cursor-pointer hover:bg-surface-container-lowest transition-colors" onclick="document.getElementById('tx-receipt-file').click()">
+                    <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                        <span class="material-symbols-outlined">receipt_long</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-bold text-on-surface text-sm truncate">Lampirkan Bukti / Struk Nota</h4>
+                        <p class="text-xs text-on-surface-variant mt-0.5 truncate" id="tx-receipt-filename">Opsional. (Maks. 2MB)</p>
+                    </div>
+                    <input type="file" id="tx-receipt-file" accept="image/*" class="hidden">
+                    <span class="material-symbols-outlined text-outline-variant shrink-0">chevron_right</span>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" id="btn-save-transaction"
+                        class="w-full py-3.5 sm:py-4 bg-primary hover:bg-primary-hover active:scale-[0.99] text-white rounded-2xl font-bold text-sm sm:text-base shadow-glow transition-all flex justify-center items-center gap-2">
+                        Simpan Transaksi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal View Receipt -->
+    <div id="modal-view-receipt"
+        class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div
+            class="bg-surface w-full max-w-md rounded-2xl shadow-float overflow-hidden transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh] ">
+            <div
+                class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface sticky top-0 z-10">
+                <h3 class="font-heading font-bold text-lg text-on-surface">Foto Struk</h3>
+                <button onclick="closeModal(document.getElementById('modal-view-receipt'))"
+                    class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-variant text-on-surface-variant hover:text-on-surface hover:bg-outline-variant transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1 flex items-center justify-center bg-background">
+                <img id="receipt-image-view" src="" alt="Receipt" class="max-w-full h-auto rounded-2xl shadow-sm">
+            </div>
+            <div class="p-4 border-t border-outline-variant bg-surface">
+                <button onclick="closeModal(document.getElementById('modal-view-receipt'))"
+                    class="w-full py-3 bg-secondary-container hover:bg-outline-variant text-on-surface rounded-2xl font-bold text-[15px] transition-colors">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tambah Mitra -->
+    <div id="modal-tambah-mitra"
+        class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 opacity-0 transition-opacity duration-300">
+        <div
+            class="bg-surface w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-float overflow-hidden transform translate-y-full sm:translate-y-0 sm:scale-95 transition-transform duration-300 ">
+            <div
+                class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface sticky top-0 z-10">
+                <h3 id="title-tambah-mitra" class="font-heading font-bold text-lg text-on-surface">Tambah Mitra Baru</h3>
+                <button onclick="closeModal(document.getElementById('modal-tambah-mitra'))"
+                    class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-variant text-on-surface-variant hover:text-on-surface hover:bg-outline-variant transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+            </div>
+            <div class="p-4 overflow-y-auto max-h-[80vh]">
+                <form id="form-tambah-mitra" class="space-y-4">
+                    <input type="hidden" id="add-partner-id">
+                    <div>
+                        <label class="block text-xs font-bold text-on-surface-variant mb-1">Nama Toko/Mitra</label>
+                        <input type="text" id="add-partner-name" required
+                            class="w-full bg-surface  rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm"
+                            placeholder="Contoh: Kios Bu Tejo">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-on-surface-variant mb-1">Nama Pemilik
+                            (Opsional)</label>
+                        <input type="text" id="add-partner-owner"
+                            class="w-full bg-surface  rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm"
+                            placeholder="Contoh: Ibu Tejo">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-on-surface-variant mb-1">Nomor Kontak
+                            (Opsional)</label>
+                        <input type="tel" id="add-partner-phone"
+                            class="w-full bg-surface  rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm"
+                            placeholder="Contoh: 08123456789">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-on-surface-variant mb-1">Alamat (Opsional)</label>
+                        <textarea id="add-partner-address" rows="2"
+                            class="w-full bg-surface rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm"
+                            placeholder="Contoh: Jl. Mangga No. 12"></textarea>
+                    </div>
+                    <div class="flex gap-3 mt-4">
+                        <button type="button" id="btn-delete-partner" class="hidden px-5 bg-error/10 hover:bg-error/20 text-error rounded-2xl font-bold transition-colors flex justify-center items-center border border-error/20">
+                            <span class="material-symbols-outlined">delete</span>
+                        </button>
+                        <button type="submit" id="btn-save-partner"
+                            class="flex-1 py-4 bg-primary hover:bg-primary-hover text-white rounded-2xl font-bold text-[15px] shadow-md transition-colors flex justify-center items-center gap-2">
+                            Simpan Mitra
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Aksi Mitra (Action Sheet) -->
+    <div id="modal-aksi-mitra"
+        class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 opacity-0 transition-opacity duration-300">
+        <div
+            class="bg-surface w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-float overflow-hidden transform translate-y-full sm:translate-y-0 sm:scale-95 transition-transform duration-300 ">
+            <div class="p-4">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <h3 id="action-partner-name" class="font-heading font-bold text-xl text-on-surface">Nama Toko
+                        </h3>
+                        <p id="action-partner-debt" class="text-sm font-semibold text-error mt-1">Piutang: Rp 0</p>
+                    </div>
+                    <button onclick="closeModal(document.getElementById('modal-aksi-mitra'))"
+                        class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-variant text-on-surface-variant hover:text-on-surface hover:bg-outline-variant transition-colors">
+                        <span class="material-symbols-outlined text-[20px]">close</span>
+                    </button>
+                </div>
+
+                <div class="space-y-3">
+                    <button id="btn-open-distribusi"
+                        class="w-full bg-surface  p-4 rounded-2xl flex items-center gap-4 hover:bg-background transition-colors shadow-sm">
+                        <div
+                            class="w-12 h-12 rounded-full bg-primary-container text-primary flex items-center justify-center">
+                            <span class="material-symbols-outlined"
+                                style="font-variation-settings: 'FILL' 1;">local_shipping</span>
+                        </div>
+                        <div class="text-left flex-1">
+                            <h4 class="font-bold text-on-surface">Distribusi Stok</h4>
+                            <p class="text-xs text-on-surface-variant">Titipkan barang gudang ke mitra ini</p>
+                        </div>
+                        <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+                    </button>
+
+                    <button id="btn-open-catat-jual"
+                        class="w-full bg-surface  p-4 rounded-2xl flex items-center gap-4 hover:bg-background transition-colors shadow-sm">
+                        <div
+                            class="w-12 h-12 rounded-full bg-secondary-container text-secondary flex items-center justify-center">
+                            <span class="material-symbols-outlined"
+                                style="font-variation-settings: 'FILL' 1;">payments</span>
+                        </div>
+                        <div class="text-left flex-1">
+                            <h4 class="font-bold text-on-surface">Catat Penjualan</h4>
+                            <p class="text-xs text-on-surface-variant">Catat barang laku & terima pembayaran</p>
+                        </div>
+                        <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+                    </button>
+                    <button id="btn-open-edit-mitra"
+                        class="w-full bg-surface  p-4 rounded-2xl flex items-center gap-4 hover:bg-background transition-colors shadow-sm">
+                        <div
+                            class="w-12 h-12 rounded-full bg-tertiary-container text-tertiary flex items-center justify-center">
+                            <span class="material-symbols-outlined"
+                                style="font-variation-settings: 'FILL' 1;">edit_document</span>
+                        </div>
+                        <div class="text-left flex-1">
+                            <h4 class="font-bold text-on-surface">Detail & Edit Profil</h4>
+                            <p class="text-xs text-on-surface-variant">Ubah nama, kontak, atau hapus mitra</p>
+                        </div>
+                        <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Distribusi Stok -->
+    <div id="modal-distribusi-stok"
+        class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 opacity-0 transition-opacity duration-300">
+        <div
+            class="bg-surface w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-float overflow-hidden transform translate-y-full sm:translate-y-0 sm:scale-95 transition-transform duration-300 ">
+            <div
+                class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface sticky top-0 z-10">
+                <h3 class="font-heading font-bold text-lg text-on-surface">Distribusi Stok</h3>
+                <button onclick="closeModal(document.getElementById('modal-distribusi-stok'))"
+                    class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-variant text-on-surface-variant hover:text-on-surface hover:bg-outline-variant transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+            </div>
+            <div class="p-4 overflow-y-auto max-h-[80vh]">
+                <form id="form-distribusi-stok" class="space-y-4">
+                    <div id="dist-partner-container">
+                        <label class="block text-xs font-bold text-on-surface-variant mb-1">Pilih Mitra</label>
+                        <select id="dist-partner-id" required
+                            class="w-full bg-surface  rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm cursor-pointer">
+                            <option value="">Memuat mitra...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-on-surface-variant mb-1">Pilih Produk</label>
+                        <select id="dist-product-id" required
+                            class="w-full bg-surface  rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm cursor-pointer">
+                            <option value="">Memuat produk...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-on-surface-variant mb-1">Jumlah (Qty)</label>
+                        <input type="number" id="dist-qty" min="1" required
+                            class="w-full bg-surface  rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm"
+                            placeholder="Contoh: 10">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-surface-variant/50 p-3 rounded-2xl ">
+                            <label class="block text-xs font-bold text-on-surface-variant mb-1">Harga Jual POS</label>
+                            <div class="text-sm font-bold text-on-surface" id="dist-harga-jual-info">Rp 0</div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-primary mb-1">Harga Setoran Mitra</label>
+                            <input type="text" inputmode="numeric" id="dist-harga-setoran" required
+                                class="w-full bg-primary/10 border border-primary/30 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm"
+                                placeholder="Otomatis">
+                        </div>
+                    </div>
+                    <div class="p-3 bg-secondary-container rounded-2xl flex justify-between items-center text-sm">
+                        <span class="font-semibold text-on-surface-variant">Total Piutang Baru:</span>
+                        <span class="font-bold text-primary" id="dist-total-piutang">Rp 0</span>
+                    </div>
+                    <button type="submit" id="btn-save-distribusi"
+                        class="w-full mt-4 py-4 bg-primary hover:bg-primary-hover text-white rounded-2xl font-bold text-[15px] shadow-md transition-colors flex justify-center items-center gap-2">
+                        Simpan Distribusi
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Catat Penjualan -->
+    <div id="modal-catat-penjualan"
+        class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 opacity-0 transition-opacity duration-300">
+        <div
+            class="bg-surface w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-float overflow-hidden transform translate-y-full sm:translate-y-0 sm:scale-95 transition-transform duration-300 ">
+            <div
+                class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface sticky top-0 z-10">
+                <h3 class="font-heading font-bold text-lg text-on-surface">Catat Penjualan Mitra</h3>
+                <button onclick="closeModal(document.getElementById('modal-catat-penjualan'))"
+                    class="w-8 h-8 flex items-center justify-center rounded-full bg-surface-variant text-on-surface-variant hover:text-on-surface hover:bg-outline-variant transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+            </div>
+            <div class="p-4 overflow-y-auto max-h-[80vh]">
+                <form id="form-catat-penjualan" class="space-y-4">
+                    <input type="hidden" id="sale-partner-id">
+                    <div>
+                        <label class="block text-xs font-bold text-on-surface-variant mb-1">Pilih Produk
+                            (Dititipkan)</label>
+                        <select id="sale-product-id" required
+                            class="w-full bg-surface  rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm cursor-pointer">
+                            <option value="">Memuat stok titipan...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-on-surface-variant mb-1">Jumlah Laku (Qty)</label>
+                        <input type="number" id="sale-qty" min="1" required
+                            class="w-full bg-surface  rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm"
+                            placeholder="Berapa yang laku?">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-on-surface-variant mb-1">Uang Diterima (Rp)</label>
+                        <input type="text" inputmode="numeric" id="sale-payment" required
+                            class="w-full bg-surface  rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm"
+                            placeholder="Masukkan angka bulat">
+                        <p class="text-xs text-on-surface-variant mt-1">Masukkan 0 jika belum dibayar (jadi piutang
+                            penuh).</p>
+                    </div>
+                    <div id="container-retur-rusak" class="hidden space-y-4 bg-surface-container/50 p-4 rounded-2xl border border-outline-variant/50">
+                        <p class="text-xs font-semibold text-on-surface-variant">Karena jumlah laku kurang dari sisa titipan, masukkan info sisa barang berikut:</p>
+                        <div>
+                            <label class="block text-xs font-bold text-on-surface-variant mb-1">Jumlah Sisa Bagus (Dikembalikan ke Gudang)</label>
+                            <input type="number" id="sale-qty-bagus" min="0" value="0"
+                                class="w-full bg-surface rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm"
+                                placeholder="Berapa yang dikembalikan bagus?">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-on-surface-variant mb-1">Jumlah Rusak (Masuk Beban Kerugian)</label>
+                            <input type="number" id="sale-qty-rusak" min="0" value="0"
+                                class="w-full bg-surface rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm"
+                                placeholder="Berapa yang rusak?">
+                        </div>
+                    </div>
+                    <div id="container-sale-wallet" class="hidden">
+                        <label class="block text-xs font-bold text-on-surface-variant mb-1">Simpan ke Dompet</label>
+                        <select id="sale-wallet-id"
+                            class="w-full bg-surface  rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm cursor-pointer">
+                            <option value="">Memuat dompet...</option>
+                        </select>
+                    </div>
+                    <button type="submit" id="btn-save-sale"
+                        class="w-full mt-4 py-4 bg-secondary-container hover:bg-secondary text-primary hover:text-white rounded-2xl font-bold text-[15px] shadow-md transition-colors flex justify-center items-center gap-2">
+                        Proses Penjualan
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Stok & Produk -->
+    <div id="modal-stok-produk"
+        class="fixed inset-0 z-[65] bg-background hidden flex-col transition-opacity duration-300 opacity-0 h-full w-full">
+        <div
+            class="flex justify-between items-center p-4 bg-surface border-b border-outline-variant shadow-sm shrink-0">
+            <div>
+                <h3 class="font-heading font-bold text-xl text-on-surface">Stok & Produk</h3>
+                <p class="text-xs text-on-surface-variant">Manajemen inventaris toko</p>
+            </div>
+            <button id="close-stok-produk"
+                class="text-on-surface-variant hover:text-on-surface transition-colors p-2 bg-secondary-container rounded-full flex">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 md:p-4 no-scrollbar space-y-4">
+            <div class="flex gap-2 mb-4">
+                <button id="btn-tambah-produk"
+                    class="flex-1 bg-primary text-white rounded-2xl py-3 flex items-center justify-center gap-2 font-bold shadow-md hover:bg-primary-hover transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">add_box</span> Produk
+                </button>
+                <button id="btn-restock"
+                    class="flex-1 bg-secondary-container text-primary rounded-2xl py-3 flex items-center justify-center gap-2 font-bold shadow-md hover:bg-secondary-container/80  transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">inventory</span> Restock
+                </button>
+            </div>
+
+            <!-- List Produk Container -->
+            <div id="produk-list-container" class="space-y-3">
+                <div class="text-center text-on-surface-variant p-8">Memuat data...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tambah/Edit Produk -->
+    <div id="modal-tambah-produk"
+        class="fixed inset-0 z-[70] bg-[#0f172a]/20 backdrop-blur-sm hidden flex items-center justify-center opacity-0 transition-opacity duration-300 p-4">
+        <div
+            class="bg-surface w-full max-w-lg rounded-2xl p-4 shadow-float flex flex-col max-h-[95vh] overflow-y-auto no-scrollbar transform scale-95 transition-transform duration-300 ">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-heading font-bold text-xl text-on-surface" id="title-tambah-produk">Tambah Produk Baru
+                </h3>
+                <button id="close-tambah-produk"
+                    class="text-on-surface-variant hover:text-on-surface transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <div id="scanner-container"
+                class="hidden mb-4 rounded-2xl overflow-hidden bg-black relative border-2 border-outline-variant">
+                <div id="reader" style="width:100%; min-height: 200px;"></div>
+                <button id="btn-close-scanner"
+                    class="absolute top-2 right-2 bg-error text-white p-1 rounded-full z-10 hover:scale-110 transition-transform"><span
+                        class="material-symbols-outlined text-[18px]">close</span></button>
+            </div>
+
+            <form id="form-tambah-produk" class="space-y-4">
+                <input type="hidden" id="prod-id">
+                <input type="hidden" id="prod-foto-url">
+                
+                <div class="bg-surface-container-low p-4 rounded-2xl border border-outline-variant/30 space-y-4">
+                    <div class="flex items-center gap-4">
+                        <div id="prod-foto-preview" class="w-16 h-16 rounded-2xl bg-surface-variant flex items-center justify-center border border-outline overflow-hidden shrink-0 shadow-sm">
+                            <span class="material-symbols-outlined text-on-surface-variant">image</span>
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-on-surface-variant mb-1">Foto Produk (Opsional)</label>
+                            <input type="file" id="prod-foto-file" accept="image/*" class="w-full text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-colors cursor-pointer text-on-surface-variant">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-surface-container-low p-4 rounded-2xl border border-outline-variant/30 space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-on-surface-variant mb-1">Barcode (Opsional)</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="prod-barcode"
+                                class="w-full bg-surface rounded-xl p-3 text-sm font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 border border-outline-variant/50 transition-all"
+                                placeholder="Scan atau ketik kode">
+                            <button type="button" id="btn-scan-barcode"
+                                class="bg-primary/10 text-primary rounded-xl px-4 flex items-center justify-center hover:bg-primary/20 transition-colors shrink-0">
+                                <span class="material-symbols-outlined text-[20px]">qr_code_scanner</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-on-surface-variant mb-1">Nama Produk *</label>
+                        <input type="text" id="prod-nama" required
+                            class="w-full bg-surface rounded-xl p-3 text-sm font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 border border-outline-variant/50 transition-all"
+                            placeholder="Contoh: Kopi Susu Aren">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-on-surface-variant mb-1">Kategori *</label>
+                            <select id="prod-kategori" required
+                                class="w-full bg-surface rounded-xl p-3 text-sm font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 border border-outline-variant/50 transition-all cursor-pointer">
+                                <option value="">Pilih...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-on-surface-variant mb-1">Satuan *</label>
+                            <select id="prod-unit" required
+                                class="w-full bg-surface rounded-xl p-3 text-sm font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 border border-outline-variant/50 transition-all cursor-pointer">
+                                <option value="">Pilih...</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-save-produk"
+                    class="w-full mt-4 py-4 bg-primary hover:bg-primary-hover text-white rounded-2xl font-bold text-[15px] shadow-md transition-colors flex justify-center items-center">
+                    Simpan Produk
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Tambah Kategori -->
+    <div id="modal-tambah-kategori"
+        class="fixed inset-0 z-[80] bg-[#0f172a]/20 backdrop-blur-sm hidden flex items-center justify-center opacity-0 transition-opacity duration-300 p-4">
+        <div
+            class="bg-surface w-full max-w-sm rounded-2xl p-4 shadow-float transform scale-95 transition-transform duration-300 ">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-heading font-bold text-lg text-on-surface">Tambah Kategori</h3>
+                <button id="close-tambah-kategori" class="text-on-surface-variant hover:text-on-surface">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <form id="form-tambah-kategori" class="space-y-4">
+                <div>
+                    <input type="text" id="cat-nama" required
+                        class="w-full bg-surface  rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm"
+                        placeholder="Contoh: Makanan Ringan">
+                </div>
+                <button type="submit" id="btn-save-kategori"
+                    class="w-full py-3 bg-secondary-container text-primary rounded-2xl font-bold shadow-sm  hover:bg-secondary hover:text-white transition-colors">
+                    Simpan
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Tambah Unit -->
+    <div id="modal-tambah-unit"
+        class="fixed inset-0 z-[80] bg-[#0f172a]/20 backdrop-blur-sm hidden flex items-center justify-center opacity-0 transition-opacity duration-300 p-4">
+        <div
+            class="bg-surface w-full max-w-sm rounded-2xl p-4 shadow-float transform scale-95 transition-transform duration-300 ">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-heading font-bold text-lg text-on-surface">Tambah Satuan (Unit)</h3>
+                <button id="close-tambah-unit" class="text-on-surface-variant hover:text-on-surface">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <form id="form-tambah-unit" class="space-y-4">
+                <div>
+                    <input type="text" id="unit-nama" required
+                        class="w-full bg-surface  rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm"
+                        placeholder="Contoh: Pcs, Box, Kg">
+                </div>
+                <button type="submit" id="btn-save-unit"
+                    class="w-full py-3 bg-secondary-container text-primary rounded-2xl font-bold shadow-sm  hover:bg-secondary hover:text-white transition-colors">
+                    Simpan
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Restock / Produksi -->
+    <div id="modal-restock"
+        class="fixed inset-0 z-[70] bg-[#0f172a]/20 backdrop-blur-sm hidden flex items-center justify-center opacity-0 transition-opacity duration-300 p-4">
+        <div
+            class="bg-surface w-full max-w-4xl rounded-3xl p-6 md:p-8 shadow-float flex flex-col max-h-[95vh] overflow-y-auto no-scrollbar transform scale-95 transition-transform duration-300">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="font-heading font-bold text-xl text-on-surface">Produksi & Restock Stok</h3>
+                    <p class="text-xs text-on-surface-variant mt-1">Hitung HPP bahan baku untuk menentukan harga jual.</p>
+                </div>
+                <button id="close-restock" class="text-on-surface-variant hover:text-on-surface transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            
+            <form id="form-restock" class="space-y-6">
+                <!-- Two Column Layout on Desktop -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                    
+                    <!-- Left Column: Product Info & Source -->
+                    <div class="space-y-5">
+                        
+                        <!-- Pilihan Sumber Stok -->
+                        <div class="bg-surface-variant/10 rounded-2xl p-5 border border-outline-variant/30 space-y-4">
+                            <h4 class="text-sm font-bold text-on-surface uppercase tracking-wider">Metode Restok</h4>
+                            <div class="flex gap-4">
+                                <label class="flex items-center gap-2 cursor-pointer group">
+                                    <input type="radio" name="restock-method" value="produksi" checked class="w-4 h-4 text-primary bg-surface border-outline-variant focus:ring-primary focus:ring-2">
+                                    <span class="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">Produksi Sendiri</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer group">
+                                    <input type="radio" name="restock-method" value="beli_jadi" class="w-4 h-4 text-primary bg-surface border-outline-variant focus:ring-primary focus:ring-2">
+                                    <span class="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">Beli Jadi (Kulakan)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="bg-surface-variant/10 rounded-2xl p-5 border border-outline-variant/30 space-y-4">
+                            <h4 class="text-sm font-bold text-on-surface uppercase tracking-wider">Informasi Produk</h4>
+                            
+                            <div class="relative" id="restock-dropdown-wrapper">
+                                <label class="block text-xs font-bold text-on-surface-variant mb-1">Pilih Produk</label>
+                                <input type="hidden" id="restock-product-id" required>
+                                <div id="restock-product-selector" tabindex="0" class="w-full bg-surface border border-outline-variant/55 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm cursor-pointer flex justify-between items-center">
+                                    <span id="restock-product-display" class="flex items-center gap-2 text-on-surface-variant">Pilih produk...</span>
+                                    <span class="material-symbols-outlined text-[20px] transition-transform duration-200" id="restock-dropdown-icon">expand_more</span>
+                                </div>
+                                <div id="restock-product-dropdown" class="absolute top-full left-0 w-full mt-1 bg-surface rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.1)] z-[80] hidden flex-col max-h-[280px]">
+                                    <div class="p-2 border-b border-outline-variant sticky top-0 bg-surface z-10 rounded-t-2xl">
+                                        <div class="relative">
+                                            <span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+                                            <input type="text" id="restock-product-search" autocomplete="off" class="w-full bg-surface-variant rounded-2xl pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Cari produk (nama/sku)...">
+                                        </div>
+                                    </div>
+                                    <div id="restock-product-list" class="overflow-y-auto no-scrollbar p-1">
+                                        <!-- list generated by JS -->
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs font-bold text-on-surface-variant mb-1">Jumlah Produksi / Restock (Qty)</label>
+                                <input type="number" id="restock-qty" min="1" required
+                                    class="w-full bg-surface border border-outline-variant/55 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm"
+                                    placeholder="Misal: 100">
+                            </div>
+                        </div>
+
+                        <div class="bg-surface-variant/10 rounded-2xl p-5 border border-outline-variant/30 space-y-4">
+                            <h4 class="text-sm font-bold text-on-surface uppercase tracking-wider">Waktu & Sumber Dana</h4>
+                            
+                            <div>
+                                <label class="block text-xs font-bold text-on-surface-variant mb-1">Tanggal Produksi</label>
+                                <input type="datetime-local" id="restock-date" required
+                                    class="w-full bg-surface border border-outline-variant/55 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-on-surface-variant mb-1">Potong Kas Dari (Jika ada Biaya Tambahan / Beli Jadi)</label>
+                                <select id="restock-wallet-id"
+                                    class="w-full bg-surface border border-outline-variant/55 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm">
+                                    <option value="">Pilih dompet / rekening...</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Column: HPP Components & Pricing -->
+                    <div class="space-y-5">
+                        <div id="restock-hpp-container" class="rounded-2xl p-5 bg-surface-variant/20 border border-outline-variant/30 space-y-4">
+                            <div class="flex justify-between items-center">
+                                <label class="block text-sm font-bold text-on-surface">Komponen HPP (Bahan Baku)</label>
+                                <button type="button" id="btn-add-hpp-row"
+                                    class="text-primary text-xs font-bold px-3 py-1.5 bg-secondary-container rounded-2xl hover:bg-secondary hover:text-white transition-colors">
+                                    + Tambah Baris
+                                </button>
+                            </div>
+
+                            <div id="hpp-rows-container" class="space-y-3">
+                                <!-- Dynamic rows will be inserted here -->
+                                <div class="flex gap-2 hpp-row">
+                                    <select class="hpp-raw-select w-2/3 bg-surface border border-outline-variant/55 rounded-2xl p-2 text-sm focus:border-primary" required>
+                                        <option value="">Pilih Bahan Baku...</option>
+                                    </select>
+                                    <input type="number" step="0.01" min="0"
+                                        class="hpp-raw-qty w-1/3 bg-surface border border-outline-variant/55 rounded-2xl p-2 text-sm focus:border-primary"
+                                        placeholder="Qty Pakai" required>
+                                    <button type="button"
+                                        class="btn-remove-hpp text-error p-2 hover:bg-error/10 rounded-2xl">
+                                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 pt-4 border-t border-outline-variant space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm font-bold text-on-surface-variant">Total HPP Produksi:</span>
+                                    <span class="text-lg font-bold text-error" id="restock-total-hpp">Rp 0</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs font-semibold text-on-surface-variant">HPP Satuan (Per Produk):</span>
+                                    <span class="text-sm font-bold text-on-surface" id="restock-hpp-satuan">Rp 0</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="restock-beli-container" class="rounded-2xl p-5 bg-surface-variant/20 border border-outline-variant/30 space-y-4 hidden">
+                            <label class="block text-sm font-bold text-on-surface">Harga Beli Satuan (Kulakan)</label>
+                            <input type="number" id="restock-harga-beli" min="0"
+                                class="w-full bg-surface border border-outline-variant/55 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm"
+                                placeholder="Rp">
+                        </div>
+
+                        <div class="bg-primary/5 rounded-2xl p-5 border border-primary/20 space-y-4">
+                            <h4 class="text-sm font-bold text-primary uppercase tracking-wider">Penetapan Harga Jual</h4>
+                            
+                            <div class="flex justify-between items-center bg-primary/10 rounded-2xl p-4 border border-primary/20">
+                                <div>
+                                    <label class="block text-xs font-bold text-primary mb-1">Rekomendasi Harga Jual</label>
+                                    <div class="text-xl font-heading font-bold text-primary" id="restock-rekomendasi-harga">Rp 0</div>
+                                </div>
+                                <select id="restock-margin" class="bg-white/80 dark:bg-slate-800 text-primary text-xs font-bold p-2 rounded-xl border border-primary/20 focus:outline-none cursor-pointer">
+                                    <option value="10">Margin 10%</option>
+                                    <option value="20">Margin 20%</option>
+                                    <option value="30">Margin 30%</option>
+                                    <option value="40" selected>Margin 40%</option>
+                                    <option value="50">Margin 50%</option>
+                                    <option value="75">Margin 75%</option>
+                                    <option value="100">Margin 100%</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs font-bold text-on-surface-variant mb-1">Tetapkan Harga Jual Satuan</label>
+                                <input type="text" inputmode="numeric" id="restock-harga-jual" required
+                                    class="w-full bg-surface border border-outline-variant/55 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm"
+                                    placeholder="Sesuai keinginan">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit button full width at bottom -->
+                <button type="submit" id="btn-save-restock"
+                    class="w-full py-4 bg-primary hover:bg-primary-hover text-white rounded-2xl font-bold text-[15px] shadow-md transition-colors flex justify-center items-center">
+                    Simpan Produksi & Update Stok
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Checkout POS -->
+    <div id="modal-pos-checkout"
+        class="fixed inset-0 z-[80] bg-[#0f172a]/20 backdrop-blur-sm hidden flex items-center justify-center opacity-0 transition-opacity duration-300 p-4">
+        <div
+            class="bg-surface w-full max-w-md rounded-2xl p-4 shadow-float transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh] ">
+            <div class="flex justify-between items-center mb-4 border-b border-outline-variant pb-4">
+                <h3 class="font-heading font-bold text-xl text-on-surface">Detail Pembayaran</h3>
+                <button id="close-pos-checkout" class="text-on-surface-variant hover:text-on-surface">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <div class="overflow-y-auto no-scrollbar flex-1 mb-4 space-y-4">
+                <!-- Cart Items List -->
+                <div>
+                    <h4 class="text-xs font-bold text-on-surface-variant uppercase mb-2">Keranjang Belanja</h4>
+                    <div id="pos-checkout-items" class="space-y-2">
+                        <!-- Dynamic items -->
+                    </div>
+                </div>
+
+                <div class="border-t border-outline-variant pt-4 flex justify-between items-center">
+                    <span class="font-semibold text-on-surface">Total Tagihan</span>
+                    <span id="pos-checkout-total" class="font-heading font-bold text-xl text-error">Rp 0</span>
+                </div>
+
+                <!-- Payment Form -->
+                <form id="form-pos-checkout" class="space-y-4 pt-2">
+                    <div>
+                        <label class="block text-xs font-bold text-on-surface-variant mb-1">Penerimaan Uang (Masuk Ke
+                            Rekening)</label>
+                        <select id="pos-wallet-id" required
+                            class="w-full bg-surface  rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm cursor-pointer">
+                            <option value="">Pilih Dompet...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-on-surface-variant mb-1">Uang Tunai Diterima</label>
+                        <input type="text" inputmode="numeric" id="pos-cash-received" required
+                            class="w-full bg-surface  rounded-2xl p-4 text-lg font-bold text-on-surface focus:outline-none focus:border-primary shadow-sm"
+                            placeholder="Rp 0">
+                    </div>
+                    <div
+                        class="bg-success/10 rounded-2xl p-4 border border-success/20 flex justify-between items-center">
+                        <span class="text-sm font-bold text-success">Uang Kembalian</span>
+                        <span id="pos-change-due" class="font-heading font-bold text-xl text-success">Rp 0</span>
+                    </div>
+
+                    <button type="submit" id="btn-save-pos"
+                        class="w-full py-4 bg-gradient-premium hover:bg-gradient-premium-hover text-white rounded-2xl font-bold text-[15px] shadow-glow transition-all active:scale-95 flex justify-center items-center gap-2 mt-4">
+                        <span class="material-symbols-outlined">point_of_sale</span>
+                        Selesaikan Transaksi
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: View Report PDF -->
+    <div id="modal-view-report"
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div
+            class="bg-surface w-full max-w-2xl rounded-2xl shadow-float  transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh]">
+            <div class="p-5 sm:p-4 border-b border-outline-variant flex justify-between items-center shrink-0">
+                <h3 id="modal-report-title" class="font-bold text-xl text-on-surface">Laporan Keuangan</h3>
+                <div class="flex gap-2">
+                    <button id="btn-download-pdf"
+                        class="bg-primary text-white rounded-2xl px-4 py-2 text-sm font-bold flex items-center gap-2 hover:bg-primary/90 transition-colors">
+                        <span class="material-symbols-outlined text-[20px]">download</span> PDF
+                    </button>
+                    <button
+                        class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-secondary-container hover:text-on-surface transition-colors"
+                        onclick="document.getElementById('modal-view-report').classList.add('hidden'); document.getElementById('modal-view-report').classList.remove('opacity-100'); document.getElementById('modal-view-report').children[0].classList.remove('scale-100');">
+                        <span class="material-symbols-outlined text-[24px]">close</span>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4 overflow-y-auto no-scrollbar grow">
+                <!-- Wrapper for PDF Generation -->
+                <div id="report-pdf-content" class="bg-white text-black p-4">
+                    <!-- Dynamic Content -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Edit Profil -->
+    <div id="modal-edit-profil" class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 opacity-0 transition-opacity duration-300 hidden">
+        <div class="bg-surface w-full max-w-lg rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-float transform translate-y-full sm:translate-y-0 sm:scale-95 transition-transform duration-300 ">
+            <div class="flex items-center justify-between p-5 border-b border-outline-variant">
+                <h3 class="font-heading font-bold text-xl text-on-surface">Edit Profil Bisnis</h3>
+                <button id="close-edit-profil" class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <form id="form-edit-profil" class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-on-surface mb-1.5">Nama Toko / Bisnis</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">storefront</span>
+                        <input id="edit-business-name" class="w-full pl-10 pr-4 py-3 bg-surface  rounded-2xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" placeholder="Nama toko Anda" type="text" required>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-on-surface mb-1.5">Nama Pemilik</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">person</span>
+                        <input id="edit-owner-name" class="w-full pl-10 pr-4 py-3 bg-surface  rounded-2xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" placeholder="Nama pemilik" type="text" required>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-on-surface mb-1.5">Alamat Bisnis</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-3 text-outline text-[20px]">location_on</span>
+                        <textarea id="edit-business-address" class="w-full pl-10 pr-4 py-3 bg-surface  rounded-2xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none" rows="2" placeholder="Alamat toko (opsional)"></textarea>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-on-surface mb-1.5">No. Telepon Bisnis</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">call</span>
+                        <input id="edit-business-phone" class="w-full pl-10 pr-4 py-3 bg-surface  rounded-2xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" placeholder="08xx-xxxx-xxxx" type="tel">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-on-surface mb-1.5">Ganti Bahasa</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">language</span>
+                        <select id="edit-language" class="w-full pl-10 pr-10 py-3 bg-surface rounded-2xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary appearance-none">
+                            <option value="id">Bahasa Indonesia</option>
+                            <option value="en">English (US)</option>
+                        </select>
+                        <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none">expand_more</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-on-surface mb-1.5">Tema Aplikasi</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">dark_mode</span>
+                        <select id="edit-theme" class="w-full pl-10 pr-10 py-3 bg-surface rounded-2xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary appearance-none">
+                            <option value="light">Terang (Light Mode)</option>
+                            <option value="dark">Gelap (Dark Mode)</option>
+                            <option value="system">Ikuti Sistem</option>
+                        </select>
+                        <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none">expand_more</span>
+                    </div>
+                </div>
+                <button id="btn-save-profil" type="submit" class="w-full py-3.5 bg-gradient-premium text-white rounded-2xl font-semibold text-sm shadow-glow hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-4">
+                    <span class="material-symbols-outlined text-[18px]">save</span>
+                    Simpan Perubahan
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Pengaturan Printer -->
+    <div id="modal-printer" class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 opacity-0 transition-opacity duration-300 hidden">
+        <div class="bg-surface w-full max-w-lg rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-float transform translate-y-full sm:translate-y-0 sm:scale-95 transition-transform duration-300 ">
+            <div class="flex items-center justify-between p-5 border-b border-outline-variant">
+                <h3 class="font-heading font-bold text-xl text-on-surface">Pengaturan Printer</h3>
+                <button id="close-printer" class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="p-5 space-y-5">
+                <div class="flex flex-col items-center text-center py-6">
+                    <div class="w-20 h-20 bg-secondary-container/30 rounded-full flex items-center justify-center mb-4">
+                        <span class="material-symbols-outlined text-[40px] text-primary" style="font-variation-settings: 'FILL' 1;">print</span>
+                    </div>
+                    <h4 class="font-heading font-bold text-lg text-on-surface mb-2">Printer Bluetooth</h4>
+                    <p class="text-sm text-on-surface-variant max-w-xs">Hubungkan printer thermal Bluetooth untuk mencetak struk transaksi secara langsung.</p>
+                </div>
+                <div class="bg-surface-container/50 rounded-2xl p-4 /50">
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="material-symbols-outlined text-primary">bluetooth_searching</span>
+                        <span class="text-sm font-semibold text-on-surface">Status Koneksi</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-2.5 h-2.5 bg-outline-variant rounded-full animate-pulse"></div>
+                        <span class="text-sm text-on-surface-variant">Tidak terhubung</span>
+                    </div>
+                </div>
+                <button id="btn-scan-printer" class="w-full py-3.5 bg-gradient-premium text-white rounded-2xl font-semibold text-sm shadow-glow hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">bluetooth_searching</span>
+                    Cari Printer Bluetooth
+                </button>
+                <p class="text-xs text-center text-on-surface-variant">Fitur ini membutuhkan Bluetooth aktif pada perangkat Anda. Pastikan printer dalam mode pairing.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Konfirmasi Logout -->
+    <div id="modal-logout" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 opacity-0 transition-opacity duration-300 hidden">
+        <div class="bg-surface w-full max-w-sm mx-4 rounded-2xl overflow-hidden shadow-float transform scale-95 transition-transform duration-300 ">
+            <div class="p-4 text-center">
+                <div class="w-16 h-16 bg-error-container/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="material-symbols-outlined text-[32px] text-error">logout</span>
+                </div>
+                <h3 class="font-heading font-bold text-xl text-on-surface mb-2">Keluar dari Akun?</h3>
+                <p class="text-sm text-on-surface-variant">Anda akan keluar dari sesi saat ini. Data Anda tetap tersimpan dan bisa diakses kembali saat login.</p>
+            </div>
+            <div class="flex border-t border-outline-variant">
+                <button id="btn-cancel-logout" class="flex-1 py-4 text-sm font-semibold text-on-surface-variant hover:bg-surface-container transition-colors">Batal</button>
+                <button id="btn-confirm-logout" class="flex-1 py-4 text-sm font-semibold text-error hover:bg-error-container/20 transition-colors border-l border-outline-variant">Ya, Keluar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Edit Bahan Baku (Master Data) -->
+    <div id="modal-edit-bahan-baku"
+        class="fixed inset-0 z-[70] bg-[#0f172a]/20 backdrop-blur-sm hidden flex items-center justify-center opacity-0 transition-opacity duration-300 p-4">
+        <div class="bg-surface w-full max-w-md rounded-2xl p-6 md:p-8 shadow-float flex flex-col max-h-[95vh] overflow-y-auto no-scrollbar transform scale-95 transition-transform duration-300 ">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-heading font-bold text-xl text-on-surface">Edit Bahan Baku</h3>
+                <button id="close-edit-bahan-baku" class="text-on-surface-variant hover:text-on-surface transition-colors p-1">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <form id="form-edit-bahan-baku" class="flex flex-col gap-5">
+                <input type="hidden" id="edit-raw-id">
+                <div class="space-y-1.5">
+                    <label class="block text-sm font-semibold text-on-surface-variant">Nama Bahan Baku</label>
+                    <input type="text" id="edit-raw-nama" required class="w-full p-3.5 bg-surface border border-outline rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-semibold text-on-surface-variant">Kategori</label>
+                        <input type="text" id="edit-raw-kategori" required class="w-full p-3.5 bg-surface border border-outline rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-semibold text-on-surface-variant">Satuan</label>
+                        <input type="text" id="edit-raw-satuan" required class="w-full p-3.5 bg-surface border border-outline rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-semibold text-on-surface-variant">Stok Terkini</label>
+                        <input type="number" step="0.01" id="edit-raw-stok" required class="w-full p-3.5 bg-surface border border-outline rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-semibold text-on-surface-variant">Harga Rata-Rata (Rp)</label>
+                        <input type="number" id="edit-raw-avg-cost" required class="w-full p-3.5 bg-surface border border-outline rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                    </div>
+                </div>
+                <div class="pt-4 border-t border-outline-variant/50">
+                    <button type="submit" id="btn-save-edit-raw" class="w-full bg-primary text-white font-bold py-4 rounded-2xl hover:bg-primary/90 transition-colors shadow-lg">
+                        Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Aksi Transaksi -->
+    <div id="modal-aksi-transaksi" class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 opacity-0 transition-opacity duration-300 hidden">
+        <div class="bg-surface w-full max-w-sm rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-float transform translate-y-full sm:translate-y-0 sm:scale-95 transition-transform duration-300 p-4 space-y-3">
+            <h3 class="font-heading font-bold text-lg text-on-surface px-2 mb-2">Aksi Transaksi</h3>
+            <button id="btn-edit-tx-action" class="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-secondary-container text-primary font-semibold text-sm hover:bg-secondary hover:text-white transition-all">
+                <span class="material-symbols-outlined text-[20px]">edit</span> Edit Transaksi
+            </button>
+            <button id="btn-receipt-tx-action" class="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-primary-container text-primary font-semibold text-sm hover:bg-primary hover:text-white transition-all hidden">
+                <span class="material-symbols-outlined text-[20px]">receipt</span> Lihat Struk Nota
+            </button>
+            <button id="btn-delete-tx-action" class="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-error-container text-error font-semibold text-sm hover:bg-error hover:text-white transition-all">
+                <span class="material-symbols-outlined text-[20px]">delete</span> Hapus Transaksi
+            </button>
+            <button id="close-aksi-transaksi" class="w-full py-3.5 bg-surface-container text-on-surface-variant rounded-2xl font-semibold text-sm hover:bg-outline-variant transition-all mt-2">
+                Batal
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal: Chat AI Asisten Bisnis -->
+    <div id="modal-chat-ai" class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 opacity-0 transition-opacity duration-300 hidden">
+        <div class="bg-surface w-full max-w-lg rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-float transform translate-y-full sm:translate-y-0 sm:scale-95 transition-transform duration-300 flex flex-col h-[85vh] sm:h-[70vh]">
+            <div class="flex items-center justify-between p-4 border-b border-outline-variant">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 bg-primary-container text-primary rounded-full flex items-center justify-center">
+                        <span class="material-symbols-outlined">smart_toy</span>
+                    </div>
+                    <div>
+                        <h3 class="font-heading font-bold text-base text-on-surface">Asisten Bisnis finMo</h3>
+                        <p class="text-[10px] text-success font-semibold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span> Online • Gemini AI Pro</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1">
+                    <button id="btn-clear-chat-ai" title="Bersihkan Chat" class="p-1.5 rounded-full hover:bg-surface-container text-on-surface-variant transition-colors">
+                        <span class="material-symbols-outlined text-[20px]">delete_sweep</span>
+                    </button>
+                    <button id="close-chat-ai" class="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center transition-colors">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Messages Container -->
+            <div id="chat-messages-container" class="flex-1 p-4 overflow-y-auto no-scrollbar space-y-4 bg-slate-50/50">
+                <div class="flex items-start gap-2.5 max-w-[85%]">
+                    <div class="w-7 h-7 bg-primary-container text-primary rounded-full flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-[16px]">smart_toy</span>
+                    </div>
+                    <div class="bg-surface border border-outline rounded-2xl rounded-tl-none p-3 shadow-card text-sm text-on-surface">
+                        Halo! Saya **Asisten AI finMo** berbasis Gemini 🧠. Saya dapat menganalisis data transaksi, laba/rugi, stok barang, saldo rekening, serta memberikan saran strategi bisnis Anda. Ada yang bisa saya bantu?
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Suggestions -->
+            <div id="chat-quick-suggestions" class="flex gap-2 overflow-x-auto no-scrollbar px-3 py-2 border-t border-outline-variant/30 bg-surface">
+                <button type="button" class="quick-chip-btn text-xs font-medium px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-all whitespace-nowrap flex-shrink-0" data-msg="Berapa laba rugi bersih bisnis saya bulan ini?">
+                    📈 Laba bersih bulan ini
+                </button>
+                <button type="button" class="quick-chip-btn text-xs font-medium px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all whitespace-nowrap flex-shrink-0" data-msg="Produk atau bahan baku apa saja yang stoknya saat ini habis?">
+                    📦 Stok yang habis
+                </button>
+                <button type="button" class="quick-chip-btn text-xs font-medium px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all whitespace-nowrap flex-shrink-0" data-msg="Berapa total saldo kas dan rekening saya saat ini?">
+                    💰 Total saldo kas
+                </button>
+                <button type="button" class="quick-chip-btn text-xs font-medium px-3 py-1.5 rounded-full bg-purple-50 text-purple-700 hover:bg-purple-100 transition-all whitespace-nowrap flex-shrink-0" data-msg="Berikan analisa singkat dan saran untuk meningkatkan profitabilitas bisnis saya.">
+                    💡 Analisa & saran bisnis
+                </button>
+            </div>
+            
+            <!-- Chat Input -->
+            <form id="chat-input-form" class="p-3 border-t border-outline-variant flex gap-2 items-center bg-surface shrink-0">
+                <input type="text" id="chat-user-message" required placeholder="Tanyakan tentang laba rugi, stok, dll..." class="flex-1 bg-surface border border-outline rounded-2xl p-3 text-sm focus:outline-none focus:border-primary">
+                <button type="submit" class="bg-primary text-white p-3 rounded-2xl hover:bg-primary-hover active:scale-95 transition-all flex items-center justify-center shadow-md shadow-primary/20">
+                    <span class="material-symbols-outlined text-[20px]">send</span>
+                </button>
+            </form>
+        </div>
+    </div>
+    <!-- Modal: Notifikasi -->
+    <div id="modal-notif" class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 opacity-0 transition-opacity duration-300 hidden">
+        <div class="bg-surface w-full max-w-lg rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-float transform translate-y-full sm:translate-y-0 sm:scale-95 transition-transform duration-300 flex flex-col max-h-[85vh]">
+            <div class="flex items-center justify-between p-4 border-b border-outline-variant">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 bg-primary-container text-primary rounded-full flex items-center justify-center">
+                        <span class="material-symbols-outlined">notifications</span>
+                    </div>
+                    <h3 class="font-heading font-bold text-lg text-on-surface">Notifikasi</h3>
+                </div>
+                <button id="close-notif" class="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center transition-colors text-on-surface-variant">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            
+            <div id="notif-list-container" class="flex-1 p-4 overflow-y-auto no-scrollbar bg-surface-container-lowest min-h-[300px]">
+                <div class="flex flex-col items-center justify-center h-full text-center opacity-70">
+                    <span class="material-symbols-outlined text-[60px] text-outline-variant mb-4">notifications_off</span>
+                    <p class="text-sm font-semibold text-on-surface-variant">Belum ada notifikasi</p>
+                    <p class="text-xs text-outline">Anda akan menerima pemberitahuan di sini.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Scan Nota AI -->
+    <div id="modal-scan-nota" class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 opacity-0 transition-opacity duration-300 hidden">
+        <div class="bg-surface w-full max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-float transform translate-y-full sm:translate-y-0 sm:scale-95 transition-transform duration-300 p-5 space-y-4 flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center pb-2 border-b border-outline-variant">
+                <h3 class="font-heading font-bold text-xl text-on-surface">Scan Nota / Struk</h3>
+                <button id="close-scan-nota" class="text-on-surface-variant hover:text-on-surface">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            
+            <div class="flex-1 flex flex-col items-center justify-center py-6 text-center space-y-4">
+                <div class="w-20 h-20 bg-primary-container text-primary rounded-full flex items-center justify-center shadow-card">
+                    <span class="material-symbols-outlined text-[40px]">photo_camera</span>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-on-surface text-[15px]">Ambil Foto Nota Belanja Anda</h4>
+                    <p class="text-xs text-on-surface-variant mt-1.5 max-w-xs mx-auto">Gunakan kamera atau unggah foto struk transaksi Anda. AI Gemini akan membaca dan memasukkan nominal otomatis.</p>
+                </div>
+                
+                <div id="scan-nota-preview-container" class="hidden w-full max-h-[220px] rounded-2xl overflow-hidden border border-outline relative">
+                    <img id="scan-nota-preview" class="w-full h-full object-cover" src="">
+                    <button type="button" id="btn-reset-scan-nota" class="absolute top-2 right-2 bg-error text-white p-1 rounded-full z-10 hover:scale-110 transition-transform"><span class="material-symbols-outlined text-[18px]">close</span></button>
+                </div>
+                
+                <div id="scan-nota-loading" class="hidden flex flex-col items-center gap-2">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <span class="text-xs font-semibold text-primary">Gemini AI sedang membaca nota Anda...</span>
+                </div>
+                
+                <label for="scan-nota-file" class="w-full py-4 bg-gradient-ocean hover:shadow-lg text-white font-bold rounded-2xl text-center cursor-pointer transition-all flex items-center justify-center gap-2 active:scale-[0.98]">
+                    <span class="material-symbols-outlined">photo_camera</span>
+                    Ambil Foto / Pilih File
+                </label>
+                <input type="file" id="scan-nota-file" accept="image/*" capture="environment" class="hidden">
+            </div>
+        </div>
+    </div>
+
+        </div>
+    </div>
+
+    <!-- Modal: Konfirmasi (Premium with blur) -->
+    <div id="modal-confirm" class="fixed inset-0 z-[110] bg-[#0f172a]/30 backdrop-blur-md hidden flex items-center justify-center opacity-0 transition-opacity duration-300 p-4">
+        <div id="modal-confirm-content" class="bg-surface w-full max-w-[340px] rounded-[28px] shadow-[0_25px_60px_rgba(0,0,0,0.15)] transform scale-95 transition-all duration-300 overflow-hidden">
+            <div class="p-6 pb-4 text-center">
+                <div class="w-16 h-16 rounded-full bg-error/10 text-error flex items-center justify-center mx-auto mb-4">
+                    <span id="confirm-icon" class="material-symbols-outlined text-[32px]">warning</span>
+                </div>
+                <h3 id="confirm-title" class="font-heading font-bold text-lg text-on-surface mb-2">Konfirmasi</h3>
+                <p id="confirm-message" class="text-sm text-on-surface-variant leading-relaxed">Apakah Anda yakin?</p>
+            </div>
+            <div class="flex gap-3 p-5 pt-2">
+                <button id="confirm-btn-cancel" class="flex-1 py-3 text-sm font-bold text-on-surface-variant bg-surface-container-low hover:bg-surface-container rounded-2xl transition-colors active:scale-95">Batal</button>
+                <button id="confirm-btn-ok" class="flex-1 py-3 text-sm font-bold text-white bg-error hover:bg-error/90 rounded-2xl shadow-md shadow-error/30 transition-colors active:scale-95">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Input Prompt (Premium with blur) -->
+    <div id="modal-input-prompt" class="fixed inset-0 z-[110] bg-[#0f172a]/30 backdrop-blur-md hidden flex items-center justify-center opacity-0 transition-opacity duration-300 p-4">
+        <div id="modal-input-content" class="bg-surface w-full max-w-[340px] rounded-[28px] shadow-[0_25px_60px_rgba(0,0,0,0.15)] transform scale-95 transition-all duration-300 overflow-hidden">
+            <div class="p-6 pb-4 text-center">
+                <h3 id="input-prompt-title" class="font-heading font-bold text-lg text-on-surface mb-4">Input Data</h3>
+                <div class="relative flex items-center input-glow rounded-[16px] border border-outline-variant/50 bg-surface-container-low transition-all duration-200">
+                    <input class="w-full h-12 px-4 bg-transparent border-none rounded-[16px] text-sm text-on-surface focus:ring-0 outline-none text-center" id="input-prompt-field" type="text" placeholder="Masukkan nilai...">
+                </div>
+            </div>
+            <div class="flex gap-3 p-5 pt-2">
+                <button id="input-btn-cancel" class="flex-1 py-3 text-sm font-bold text-on-surface-variant bg-surface-container-low hover:bg-surface-container rounded-2xl transition-colors active:scale-95">Batal</button>
+                <button id="input-btn-ok" class="flex-1 py-3 text-sm font-bold text-white bg-primary hover:bg-primary/90 rounded-2xl shadow-md shadow-primary/30 transition-colors active:scale-95">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Lainnya -->
+    <div id="modal-lainnya"
+        class="fixed inset-0 z-[100] bg-[#0f172a]/40 backdrop-blur-sm hidden flex items-center justify-center opacity-0 transition-opacity duration-300 p-4">
+        <div class="bg-surface w-full max-w-lg rounded-[24px] p-5 shadow-float flex flex-col max-h-[85vh] transform scale-95 transition-transform duration-300">
+            <div class="flex justify-between items-center pb-3 border-b border-outline-variant/30">
+                <h3 id="lainnya-title" class="font-heading font-bold text-lg text-on-surface">Pilih Kategori</h3>
+                <button id="close-modal-lainnya" class="text-on-surface-variant hover:text-on-surface transition-colors p-1">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="py-3 border-b border-outline-variant/30">
+                <div class="relative flex items-center">
+                    <span class="material-symbols-outlined absolute left-3.5 text-on-surface-variant/60 text-[20px] pointer-events-none">search</span>
+                    <input class="w-full bg-slate-100/90 border-none rounded-xl py-2.5 pl-10 pr-4 text-sm font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-on-surface-variant/50 transition-all" id="search-lainnya" placeholder="Search..." type="text">
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto py-3 no-scrollbar">
+                <ul id="lainnya-list" class="space-y-1">
+                    <!-- Injected via JS -->
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div id="modal-datepicker" class="fixed inset-0 z-[90] bg-[#0f172a]/40 backdrop-blur-sm hidden flex-col justify-end transition-opacity duration-300 opacity-0">
+        <div class="bg-surface w-full rounded-t-[32px] p-5 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] transform translate-y-full transition-transform duration-300" id="modal-datepicker-content">
+            <div class="flex justify-between items-center mb-6 px-2">
+                <button type="button" id="dp-btn-today" class="text-sm font-bold text-primary px-4 py-2 bg-primary/10 rounded-xl active:scale-95 transition-transform">Hari Ini</button>
+                <h3 class="font-heading font-bold text-[17px] text-on-surface">Pilih Tanggal</h3>
+                <button type="button" id="dp-btn-confirm" class="text-sm font-bold text-white px-5 py-2 bg-primary rounded-xl shadow-md shadow-primary/30 active:scale-95 transition-transform">Selesai</button>
+            </div>
+            
+            <div class="relative flex justify-between h-[200px] bg-surface-container-lowest border border-outline-variant/30 rounded-3xl overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-16 before:bg-gradient-to-b before:from-surface-container-lowest before:to-transparent before:z-10 before:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-16 after:bg-gradient-to-t after:from-surface-container-lowest after:to-transparent after:z-10 after:pointer-events-none shadow-inner">
+                <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 border-y-2 border-primary/20 bg-primary/5 pointer-events-none"></div>
+                
+                <div id="dp-wheel-day" class="flex-1 h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar text-center relative z-0" style="scroll-behavior: smooth;">
+                    <div class="h-[80px]"></div>
+                    <div id="dp-list-day"></div>
+                    <div class="h-[80px]"></div>
+                </div>
+                
+                <div id="dp-wheel-month" class="flex-[1.5] h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar text-center relative z-0" style="scroll-behavior: smooth;">
+                    <div class="h-[80px]"></div>
+                    <div id="dp-list-month"></div>
+                    <div class="h-[80px]"></div>
+                </div>
+                
+                <div id="dp-wheel-year" class="flex-1 h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar text-center relative z-0" style="scroll-behavior: smooth;">
+                    <div class="h-[80px]"></div>
+                    <div id="dp-list-year"></div>
+                    <div class="h-[80px]"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Viewport zoom lock & splash screen removal -->
+    <script>
+        // Prevent pinch-zoom on iOS/Android
+        document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) { e.preventDefault(); }
+        }, { passive: false });
+        // Prevent double-tap zoom
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(e) {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) { e.preventDefault(); }
+            lastTouchEnd = now;
+        }, false);
+        // Remove splash screen when app is ready
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                const splash = document.getElementById('app-splash-screen');
+                if (splash) {
+                    splash.classList.add('fade-out');
+                    setTimeout(function() { splash.remove(); }, 500);
+                }
+            }, 300);
+        });
+    </script>
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('ServiceWorker registration failed: ', error);
+                    });
+            });
+        }
+    </script>
+    
+    <!-- Modal Tambah Rekening -->
+    <div id="modal-tambah-rekening" class="fixed inset-0 z-[100] bg-black/50 hidden flex items-center justify-center opacity-0 transition-opacity duration-300 p-4">
+        <div class="bg-surface w-full max-w-md rounded-2xl p-6 shadow-2xl flex flex-col transform scale-95 transition-transform duration-300">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-heading font-bold text-xl text-on-surface">Tambah Rekening</h3>
+                <button id="close-tambah-rekening" class="text-on-surface-variant hover:text-on-surface transition-colors p-1">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <form id="form-tambah-rekening" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-on-surface-variant mb-1" for="add-wallet-name">Nama Rekening/Dompet</label>
+                    <input type="text" id="add-wallet-name" required placeholder="Contoh: BCA, GoPay" class="w-full bg-background border border-outline-variant rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-on-surface-variant mb-1" for="add-wallet-balance">Saldo Awal (Rp)</label>
+                    <input type="text" inputmode="numeric" id="add-wallet-balance" required placeholder="0" class="w-full bg-background border border-outline-variant rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all">
+                </div>
+                <div class="pt-4">
+                    <button type="submit" id="btn-save-wallet" class="w-full py-3 bg-gradient-ocean hover:bg-gradient-ocean-hover text-white rounded-2xl font-bold shadow-glow transition-all active:scale-95 flex justify-center items-center">
+                        Simpan Rekening
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Scanner Global -->
+    <div id="modal-scanner" class="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center hidden flex-col">
+        <div class="w-full max-w-sm bg-surface rounded-2xl overflow-hidden relative">
+            <div class="p-4 flex justify-between items-center border-b border-outline-variant bg-surface">
+                <h3 class="font-bold text-on-surface">Scan Barcode</h3>
+                <button onclick="closeModal(document.getElementById('modal-scanner')); window.stopScanner();" class="text-on-surface-variant">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div id="global-scanner-container" class="w-full bg-black min-h-[300px]"></div>
+        </div>
+    </div>
+
+    <!-- App Main Module Script -->
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>
