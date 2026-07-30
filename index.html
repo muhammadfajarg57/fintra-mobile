@@ -397,7 +397,7 @@
     <div class="flex min-h-screen w-full relative">
         
         <!-- Sidebar (PC/Desktop Only) -->
-        <aside id="desktop-sidebar" class="hidden md:flex flex-col w-64 bg-surface border-r border-outline-variant/50 h-screen sticky top-0 p-5 shrink-0 z-40">
+        <aside id="desktop-sidebar" class="!hidden md:flex flex-col w-64 bg-surface border-r border-outline-variant/50 h-screen sticky top-0 p-5 shrink-0 z-40">
             <!-- Brand Logo -->
             <div class="flex items-center gap-2 mb-8 px-2">
                 <svg viewBox="0 0 120 60" class="w-12 h-6 drop-shadow-sm" fill="none">
@@ -464,7 +464,7 @@
             
             <!-- Top Navigation Bar (Responsive) -->
             <header id="top-app-bar"
-                class="w-full sticky top-0 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/50 z-30 h-16 flex items-center transition-all">
+                class="w-full sticky top-0 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/50 z-30 h-16 flex items-center transition-all" style="display: none;">
                 <div class="w-full px-4 sm:px-6 lg:px-8 flex justify-between items-center h-full">
 
                     <!-- Mobile Left: Logo & Brand (hidden on md:) -->
@@ -516,7 +516,7 @@
 
             <!-- Bottom Navigation Bar (Mobile Only) -->
             <nav id="bottom-nav-bar"
-                class="fixed bottom-3 left-4 right-4 z-50 bg-surface/90 backdrop-blur-xl border border-outline-variant/30 flex justify-between items-center px-6 py-2.5 md:hidden shadow-lg rounded-full">
+                class="fixed bottom-3 left-4 right-4 z-50 bg-surface/90 backdrop-blur-xl border border-outline-variant/30 flex justify-between items-center px-6 py-2.5 md:hidden shadow-lg rounded-full" style="display: none;">
                 
                 <button id="nav-home"
                     class="flex items-center justify-center text-on-surface-variant p-2 transition-colors rounded-full hover:bg-surface-container">

@@ -4364,43 +4364,23 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
         if (e.target.closest('#btn-google-signin') || e.target.closest('#btn-google-signup')) {
             e.preventDefault();
             const googleBtn = e.target.closest('#btn-google-signin') || e.target.closest('#btn-google-signup');
+            const emailPrompt = prompt("Masukkan alamat email Google Anda:");
+            if (!emailPrompt || !emailPrompt.trim()) return;
             const originalHTML = googleBtn.innerHTML;
             googleBtn.disabled = true;
             googleBtn.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">sync</span> <span class="text-sm font-semibold text-on-surface">Menghubungkan...</span>';
             
             try {
-                const provider = new GoogleAuthProvider();
-                provider.setCustomParameters({ prompt: 'select_account' });
-                
-                let result = null;
-                try {
-                    result = await signInWithPopup(auth, provider);
-                } catch (popupErr) {
-                    // If popup blocked or failed, fall back to redirect
-                    if (popupErr.code === 'auth/popup-blocked' || 
-                        popupErr.code === 'auth/popup-closed-by-user' ||
-                        popupErr.code === 'auth/cancelled-popup-request') {
-                        console.warn('Popup blocked/closed, falling back to redirect...');
-                        await signInWithRedirect(auth, provider);
-                        return; // Page will redirect, no further processing
-                    }
-                    throw popupErr;
-                }
-                
-                if (result && result.user) {
-                    await handleGoogleUserProfile(result.user);
-                }
+                const authRes = await apiFetch('/api/auth/google', {
+                    method: 'POST',
+                    body: JSON.stringify({ email: emailPrompt.trim(), name: emailPrompt.trim().split('@')[0] })
+                });
+                localStorage.setItem('finmo_token', authRes.token);
+                auth.currentUser = authRes.user;
+                MapsTo('dashboard');
             } catch (err) {
                 console.error("Login Google error:", err);
-                let msg = err.message || String(err);
-                if (err.code === 'auth/account-exists-with-different-credential') {
-                    msg = 'Akun dengan email ini sudah terdaftar menggunakan metode lain. Silakan masuk dengan email/password.';
-                } else if (err.code === 'auth/network-request-failed') {
-                    msg = 'Koneksi jaringan bermasalah. Periksa internet Anda dan coba lagi.';
-                } else if (err.code === 'auth/internal-error') {
-                    msg = 'Terjadi kesalahan internal. Silakan coba lagi.';
-                }
-                alert('Login Google gagal: ' + msg);
+                alert('Login Google gagal: ' + (err.message || err));
             } finally {
                 if (googleBtn) {
                     googleBtn.disabled = false;
@@ -4655,21 +4635,8 @@ alert("Pendaftaran berhasil! Selamat datang di finMo.");
         }
     });
 
-    // Handle Google redirect result on page load
-    getRedirectResult(auth).then(async (result) => {
-        if (result && result.user) {
-            console.log('Google redirect sign-in successful:', result.user.email);
-            await handleGoogleUserProfile(result.user);
-        }
-    }).catch((err) => {
-        if (err.code && err.code !== 'auth/popup-closed-by-user') {
-            console.error('Redirect result error:', err);
-            alert('Login Google gagal: ' + (err.message || err));
-        }
-    });
-
-    
-checkAuthSession().then((user) => {
+    // Handle session check on page load
+    checkAuthSession().then((user) => {
     const hashPage = window.location.hash.replace('#', '');
     if (user) {
         if (hashPage === 'signin' || hashPage === 'signup' || hashPage === 'hello' || !hashPage) {
