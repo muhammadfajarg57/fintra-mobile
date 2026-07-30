@@ -1,4 +1,4 @@
-import { getDb } from '../api/lib/db.js';
+import { getDb } from '../lib/db.js';
 
 async function init() {
   console.log('Initializing Turso DB Schema...');

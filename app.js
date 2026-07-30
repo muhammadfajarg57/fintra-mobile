@@ -11,12 +11,7 @@ export async function apiFetch(endpoint, options = {}) {
     }
 
     const res = await fetch(endpoint, { ...options, headers });
-    let json;
-    try {
-        json = await res.json();
-    } catch (e) {
-        json = { error: `Respons server tidak valid (${res.status})` };
-    }
+    const json = await res.json();
     if (!res.ok) {
         throw new Error(json.error || 'Terjadi kesalahan pada server');
     }
@@ -30,19 +25,19 @@ export let auth = {
 export async function checkAuthSession() {
     const token = localStorage.getItem('finmo_token');
     if (!token) {
-        window.currentUser = null;
+        auth.currentUser = null;
         return null;
     }
     try {
         const res = await apiFetch('/api/auth/me');
         if (res && res.user) {
-            window.currentUser = res.user;
+            auth.currentUser = res.user;
             return res.user;
         }
     } catch (e) {
         console.warn("Session expired or invalid:", e.message);
         localStorage.removeItem('finmo_token');
-        window.currentUser = null;
+        auth.currentUser = null;
     }
     return null;
 }
@@ -1461,7 +1456,25 @@ function groupTransactionsByDate(transactions) {
 }
 
 export async function initializeUserWallets(uid) {
-    // Handled by backend API
+    if (!uid) return;
+    try {
+        const walletsQ = query(collection(db, 'wallets'), where('uid', '==', uid));
+        const snap = await getDocs(walletsQ);
+        if (snap.empty) {
+            const newWalletRef = doc(collection(db, 'wallets'));
+            await setDoc(newWalletRef, {
+                uid: uid,
+                nama_rekening: 'Kas Utama',
+                jenis: 'kas',
+                saldo_terkini: 0,
+                saldo_awal: 0,
+                warna: '#0ea5e9',
+                created_at: new Date()
+            });
+        }
+    } catch (e) {
+        console.warn("Auto initialize wallets warning:", e);
+    }
 }
 
 export async function loadDashboardData(uid) {
@@ -1557,18 +1570,25 @@ export async function loadReportsPage(uid) {
     ];
 
     async function fetchAllData() {
-        const [txRes, wRes, pRes, ptRes, rmRes] = await Promise.all([
-            apiFetch('/api/transactions'),
-            apiFetch('/api/wallets'),
-            apiFetch('/api/products'),
-            apiFetch('/api/partners'),
-            apiFetch('/api/raw-materials')
-        ]);
-        rawTransactions = txRes.data || [];
-        rawWallets = wRes.data || [];
-        rawProducts = pRes.data || [];
-        rawPartners = ptRes.data || [];
-        rawMaterials = rmRes.data || [];
+        const tQ = query(collection(db, 'transactions'), where('uid', '==', uid));
+        const tSnap = await getDocs(tQ);
+        rawTransactions = tSnap.docs.map(d => ({id: d.id, ...d.data()}));
+
+        const wQ = query(collection(db, 'wallets'), where('uid', '==', uid));
+        const wSnap = await getDocs(wQ);
+        rawWallets = wSnap.docs.map(d => ({id: d.id, ...d.data()}));
+
+        const pQ = query(collection(db, 'products'), where('uid', '==', uid));
+        const pSnap = await getDocs(pQ);
+        rawProducts = pSnap.docs.map(d => ({id: d.id, ...d.data()}));
+        
+        const ptQ = query(collection(db, 'partners'), where('uid', '==', uid));
+        const ptSnap = await getDocs(ptQ);
+        rawPartners = ptSnap.docs.map(d => ({id: d.id, ...d.data()}));
+
+        const rmQ = query(collection(db, 'raw_materials'), where('uid', '==', uid));
+        const rmSnap = await getDocs(rmQ);
+        rawMaterials = rmSnap.docs.map(d => ({id: d.id, ...d.data()}));
     }
 
     function getFilteredData() {
@@ -2508,29 +2528,33 @@ export async function loadReportsPage(uid) {
 
 export async function loadWalletsPage(uid) {
     try {
-        const res = await apiFetch('/api/wallets');
-        const walletsData = res.data || [];
+        const walletsQuery = query(collection(db, 'wallets'), where('uid', '==', uid));
+        const walletsSnapshot = await getDocs(walletsQuery);
         let walletsHTML = '';
-        walletsData.forEach((data) => {
-            const name = data.nama || data.nama_rekening || 'Dompet';
+        
+        walletsSnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+
             walletsHTML += `
             <div class="bg-surface rounded-2xl p-3 shadow-card border border-outline-variant flex items-center justify-between">
                 <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-card" style="background-color: ${data.color || data.warna || '#1a73e8'}">
-                        ${data.ikon ? `<span class="material-symbols-outlined">${data.ikon}</span>` : name.substring(0, 2).toUpperCase()}
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-card" style="background-color: ${data.warna || '#1a73e8'}">
+                        ${data.ikon ? `<span class="material-symbols-outlined">${data.ikon}</span>` : data.nama_rekening.substring(0, 2).toUpperCase()}
                     </div>
                     <div>
-                        <div class="font-bold text-on-surface">${name}</div>
+                        <div class="font-bold text-on-surface">${data.nama_rekening}</div>
                         <div class="text-xs font-medium text-primary mt-1">Modal Awal: ${formatRupiah(data.saldo_awal || 0)}</div>
-                        <div class="text-xs text-on-surface-variant">Saldo Saat Ini: ${formatRupiah(data.saldo_terkini || 0)}</div>
+                        <div class="text-xs text-on-surface-variant">Saldo Saat Ini: ${formatRupiah(data.saldo_terkini)}</div>
                     </div>
                 </div>
             </div>`;
         });
+        
         const container = document.getElementById('wallets-list-container');
         if (container) {
             container.innerHTML = walletsHTML || '<div class="p-6 text-center text-on-surface-variant col-span-full">Belum ada rekening. Silakan tambah.</div>';
         }
+        
     } catch (e) {
         console.error("Error loading wallets page:", e);
     }
@@ -2539,9 +2563,14 @@ export async function loadWalletsPage(uid) {
 // Ledger: Load Transactions Page
 export async function loadTransactionsPage(uid) {
     try {
-        const res = await apiFetch('/api/transactions');
-        const transactions = res.data || [];
-        transactions.forEach(d => { d._id = d.id; });
+        const txQuery = query(collection(db, 'transactions'), where('uid', '==', uid));
+        const txSnapshot = await getDocs(txQuery);
+        const transactions = [];
+        txSnapshot.forEach(doc => {
+            const data = doc.data();
+            data._id = doc.id;
+            transactions.push(data);
+        });
         
         const container = document.getElementById('tx-list-container');
         if (!container) return;
@@ -2843,34 +2872,34 @@ export function MapsTo(page, pushHistory = true) {
     
     if (page === 'dashboard') {
         if (!targetContainer.innerHTML) targetContainer.innerHTML = dashboardTemplate;
-        if (window.currentUser) loadDashboardData((window.currentUser?.uid || window._profileData?.uid));
+        if (auth.currentUser) loadDashboardData(auth.currentUser.uid);
     } else if (page === 'transactions') {
         if (!targetContainer.innerHTML) targetContainer.innerHTML = transactionsTemplate;
-        if (window.currentUser) loadTransactionsPage((window.currentUser?.uid || window._profileData?.uid));
+        if (auth.currentUser) loadTransactionsPage(auth.currentUser.uid);
     } else if (page === 'pos') {
         if (!targetContainer.innerHTML) targetContainer.innerHTML = templatePOS;
-        if (window.currentUser) loadPOSPage((window.currentUser?.uid || window._profileData?.uid));
+        if (auth.currentUser) loadPOSPage(auth.currentUser.uid);
     } else if (page === 'partners') {
         if (!targetContainer.innerHTML) targetContainer.innerHTML = templatePartners;
-        if (window.currentUser) loadPartnersPage((window.currentUser?.uid || window._profileData?.uid));
+        if (auth.currentUser) loadPartnersPage(auth.currentUser.uid);
     } else if (page === 'products') {
         if (!targetContainer.innerHTML) targetContainer.innerHTML = templateProducts;
-        if (window.currentUser) loadProductsPage();
+        if (auth.currentUser) loadProductsPage();
     } else if (page === 'rawmaterials') {
         if (!targetContainer.innerHTML) targetContainer.innerHTML = templateRawMaterials;
-        if (window.currentUser) loadRawMaterialsPage((window.currentUser?.uid || window._profileData?.uid));
+        if (auth.currentUser) loadRawMaterialsPage(auth.currentUser.uid);
     } else if (page === 'profile') {
         if (!targetContainer.innerHTML) targetContainer.innerHTML = templateProfile;
-        if (window.currentUser) loadProfileData((window.currentUser?.uid || window._profileData?.uid));
+        if (auth.currentUser) loadProfileData(auth.currentUser.uid);
     } else if (page === 'settings') {
         if (!targetContainer.innerHTML) targetContainer.innerHTML = templateSettings;
         initSettingsState();
     } else if (page === 'wallets') {
         if (!targetContainer.innerHTML) targetContainer.innerHTML = templateWallets;
-        if (window.currentUser) loadWalletsPage((window.currentUser?.uid || window._profileData?.uid));
+        if (auth.currentUser) loadWalletsPage(auth.currentUser.uid);
     } else if (page === 'reports') {
         if (!targetContainer.innerHTML) targetContainer.innerHTML = templateReports;
-        if (window.currentUser) loadReportsPage((window.currentUser?.uid || window._profileData?.uid));
+        if (auth.currentUser) loadReportsPage(auth.currentUser.uid);
     } else if (page === 'signin') {
         if (!sessionStorage.getItem('hasSeenHello')) {
             sessionStorage.setItem('hasSeenHello', 'true');
@@ -3016,7 +3045,7 @@ function initApp() {
     document.addEventListener('submit', async (e) => {
         if (e.target.id === 'form-tambah-rekening') {
             e.preventDefault();
-            if (!window.currentUser) return;
+            if (!auth.currentUser) return;
             const btnSave = document.getElementById('btn-save-wallet');
             if(btnSave) { btnSave.disabled = true; btnSave.innerHTML = "Menyimpan..."; }
             
@@ -3027,12 +3056,19 @@ function initApp() {
                 const balance = Number(rawBal.replace(/\./g, ''));
                 
                 const newWalletRef = doc(collection(db, 'wallets'));
-                // Handled via apiFetch
+                await setDoc(newWalletRef, {
+                    uid: auth.currentUser.uid,
+                    nama_rekening: name,
+                    saldo_terkini: balance,
+                    saldo_awal: balance,
+                    ikon: 'account_balance_wallet',
+                    warna: '#1a73e8'
+                });
                 
                 alert("Rekening berhasil ditambahkan!");
                 closeModal(document.getElementById('modal-tambah-rekening'));
                 e.target.reset();
-                if (window.currentUser) loadWalletsPage((window.currentUser?.uid || window._profileData?.uid));
+                if (auth.currentUser) loadWalletsPage(auth.currentUser.uid);
             } catch(err) {
                 alert("Gagal menyimpan rekening: " + err.message);
             } finally {
@@ -3045,7 +3081,7 @@ function initApp() {
     if (formRecord) {
         formRecord.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!window.currentUser) return;
+            if (!auth.currentUser) return;
             const btnSave = document.getElementById('btn-save-transaction');
             if(btnSave) { btnSave.disabled = true; btnSave.innerHTML = "Menyimpan..."; }
             
@@ -3069,7 +3105,7 @@ function initApp() {
                 const finalDate = dateVal.includes('T') ? new Date(dateVal) : new Date(dateVal + 'T12:00:00');
                 
                 const txData = {
-                    uid: (window.currentUser?.uid || window._profileData?.uid),
+                    uid: auth.currentUser.uid,
                     tipe_tx: txType,
                     nominal: nominal,
                     kategori: txCategory,
@@ -3143,7 +3179,7 @@ function initApp() {
                     const delta = walletDeltas[wId];
                     if (delta !== 0) {
                         const wRef = doc(db, 'wallets', wId);
-                        const wDoc = null;
+                        const wDoc = await getDoc(wRef);
                         if (wDoc.exists()) {
                             const currentSaldo = wDoc.data().saldo_terkini || 0;
                             const newSaldo = currentSaldo + delta;
@@ -3171,10 +3207,10 @@ function initApp() {
                 // Reset text button
                 if (btnSave) btnSave.innerHTML = "Simpan Transaksi";
                 
-                if (window.currentUser) {
-                    loadDashboardData((window.currentUser?.uid || window._profileData?.uid));
+                if (auth.currentUser) {
+                    loadDashboardData(auth.currentUser.uid);
                     if (document.getElementById('tx-list-container')) {
-                        loadTransactionsPage((window.currentUser?.uid || window._profileData?.uid));
+                        loadTransactionsPage(auth.currentUser.uid);
                     }
                 }
             } catch (err) {
@@ -3290,13 +3326,13 @@ function initApp() {
     // ==========================================
     document.getElementById('form-tambah-mitra')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!window.currentUser) return;
+        if (!auth.currentUser) return;
         const btn = document.getElementById('btn-save-partner');
         btn.disabled = true; btn.innerHTML = "Menyimpan...";
         try {
             const partnerId = document.getElementById('add-partner-id').value;
             const data = {
-                uid: (window.currentUser?.uid || window._profileData?.uid),
+                uid: auth.currentUser.uid,
                 nama_toko: document.getElementById('add-partner-name').value,
                 pemilik: document.getElementById('add-partner-owner').value,
                 kontak: document.getElementById('add-partner-phone').value,
@@ -3320,14 +3356,14 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
             document.getElementById('form-tambah-mitra').reset();
             document.getElementById('add-partner-id').value = '';
             document.getElementById('title-tambah-mitra').innerText = "Tambah Mitra Baru";
-            loadPartnersPage((window.currentUser?.uid || window._profileData?.uid));
+            loadPartnersPage(auth.currentUser.uid);
         } catch (err) { alert(err.message); }
         finally { btn.disabled = false; btn.innerHTML = "Simpan Mitra"; }
     });
 
     document.getElementById('form-distribusi-stok')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!window.currentUser) return;
+        if (!auth.currentUser) return;
         const btn = document.getElementById('btn-save-distribusi');
         btn.disabled = true; btn.innerHTML = "Menyimpan...";
         try {
@@ -3337,7 +3373,13 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
             const setoranStr = document.getElementById('dist-harga-setoran').value.replace(/[^0-9]/g, '');
             const setoran = setoranStr ? parseInt(setoranStr) : 0;
             
-            const snap = { empty: true }; const batchSnapRaw = { empty: true, docs: [] };
+            const q = query(collection(db, 'consignment_stock'), where('partner_id', '==', partnerId), where('product_id', '==', productId));
+            const snap = await getDocs(q);
+            let consDocRef = snap.empty ? doc(collection(db, 'consignment_stock')) : snap.docs[0].ref;
+
+            // FIFO Batch preparation
+            const qBatches = query(collection(db, 'stock_batches'), where('product_id', '==', productId));
+            const batchSnapRaw = await getDocs(qBatches);
             let validBatches = [];
             batchSnapRaw.forEach(b => {
                 if (b.data().qty_sisa > 0) validBatches.push(b);
@@ -3398,7 +3440,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
                 if (newDebt > 0) {
                     const txRef = doc(collection(db, 'transactions'));
                     transaction.set(txRef, {
-                        uid: (window.currentUser?.uid || window._profileData?.uid),
+                        uid: auth.currentUser.uid,
                         tipe_tx: 'in',
                         nominal: newDebt,
                         kategori: 'Distribusi Stok',
@@ -3412,7 +3454,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
                 if (newHpp > 0) {
                     const txHppRef = doc(collection(db, 'transactions'));
                     transaction.set(txHppRef, {
-                        uid: (window.currentUser?.uid || window._profileData?.uid),
+                        uid: auth.currentUser.uid,
                         tipe_tx: 'out',
                         nominal: newHpp,
                         kategori: 'Beban HPP',
@@ -3426,7 +3468,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
                 
                 if (!consDoc) {
                     transaction.set(consDocRef, {
-                        uid: (window.currentUser?.uid || window._profileData?.uid),
+                        uid: auth.currentUser.uid,
                         partner_id: partnerId,
                         product_id: productId,
                         nama_produk: prodDoc.data().nama_produk || prodDoc.data().nama,
@@ -3443,7 +3485,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
             
             closeModal(document.getElementById('modal-distribusi-stok'));
             document.getElementById('form-distribusi-stok').reset();
-            loadPartnersPage((window.currentUser?.uid || window._profileData?.uid));
+            loadPartnersPage(auth.currentUser.uid);
             
             if (confirm("Distribusi berhasil! Apakah Anda ingin mencetak struk?")) {
                 if (window.printDistribusiReceipt) {
@@ -3456,7 +3498,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
 
     document.getElementById('form-catat-penjualan')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!window.currentUser) return;
+        if (!auth.currentUser) return;
         const btn = document.getElementById('btn-save-sale');
         btn.disabled = true; btn.innerHTML = "Memproses...";
         try {
@@ -3520,7 +3562,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
                     
                     const txRef = doc(collection(db, 'transactions'));
                     transaction.set(txRef, {
-                        uid: (window.currentUser?.uid || window._profileData?.uid),
+                        uid: auth.currentUser.uid,
                         tipe_tx: 'in',
                         nominal: paymentReceived,
                         kategori: 'Setoran Piutang Mitra',
@@ -3537,7 +3579,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
                     
                     const batchRef = doc(collection(db, 'stock_batches'));
                     transaction.set(batchRef, {
-                        uid: (window.currentUser?.uid || window._profileData?.uid),
+                        uid: auth.currentUser.uid,
                         product_id: productId,
                         qty_awal: qtyBagus,
                         qty_sisa: qtyBagus,
@@ -3551,7 +3593,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
                     // Kredit Beban HPP
                     const txHppCreditRef = doc(collection(db, 'transactions'));
                     transaction.set(txHppCreditRef, {
-                        uid: (window.currentUser?.uid || window._profileData?.uid),
+                        uid: auth.currentUser.uid,
                         tipe_tx: 'out',
                         nominal: -(qtyBagus * costPrice),
                         kategori: 'Beban HPP',
@@ -3565,7 +3607,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
                 if (qtyBagus + qtyRusak > 0) {
                     const txReturRef = doc(collection(db, 'transactions'));
                     transaction.set(txReturRef, {
-                        uid: (window.currentUser?.uid || window._profileData?.uid),
+                        uid: auth.currentUser.uid,
                         tipe_tx: 'out',
                         nominal: (qtyBagus + qtyRusak) * setoranPrice,
                         kategori: 'Retur Penjualan',
@@ -3580,7 +3622,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
                     // Debit Beban Kerugian Barang Rusak
                     const txKerugianRef = doc(collection(db, 'transactions'));
                     transaction.set(txKerugianRef, {
-                        uid: (window.currentUser?.uid || window._profileData?.uid),
+                        uid: auth.currentUser.uid,
                         tipe_tx: 'out',
                         nominal: qtyRusak * costPrice,
                         kategori: 'Beban Kerugian Barang Rusak',
@@ -3592,7 +3634,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
                     // Kredit Beban HPP (menggunakan nominal negatif)
                     const txHppCreditRusakRef = doc(collection(db, 'transactions'));
                     transaction.set(txHppCreditRusakRef, {
-                        uid: (window.currentUser?.uid || window._profileData?.uid),
+                        uid: auth.currentUser.uid,
                         tipe_tx: 'out',
                         nominal: -(qtyRusak * costPrice),
                         kategori: 'Beban HPP',
@@ -3606,7 +3648,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
             closeModal(document.getElementById('modal-catat-penjualan'));
             document.getElementById('form-catat-penjualan').reset();
             document.getElementById('container-retur-rusak')?.classList.add('hidden');
-            loadPartnersPage((window.currentUser?.uid || window._profileData?.uid));
+            loadPartnersPage(auth.currentUser.uid);
             alert("Penjualan & retur berhasil dicatat!");
         } catch (err) { alert(err.message); }
         finally { btn.disabled = false; btn.innerHTML = "Proses Penjualan"; }
@@ -3797,11 +3839,14 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
 
     document.getElementById('form-tambah-kategori')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!window.currentUser) return;
+        if (!auth.currentUser) return;
         const btn = document.getElementById('btn-save-kategori');
         btn.disabled = true; btn.innerHTML = "Menyimpan...";
         try {
-            await apiFetch("/api/categories", { method: "POST", body: JSON.stringify({ nama: val, type: "product_category" }) });
+            await setDoc(doc(collection(db, 'product_categories')), {
+                uid: auth.currentUser.uid,
+                nama_kategori: document.getElementById('cat-nama').value
+            });
             closeModal(document.getElementById('modal-tambah-kategori'));
             document.getElementById('form-tambah-kategori').reset();
             if (window.populateCategoryDropdown) window.populateCategoryDropdown(); // refresh dropdown
@@ -3811,11 +3856,14 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
 
     document.getElementById('form-tambah-unit')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!window.currentUser) return;
+        if (!auth.currentUser) return;
         const btn = document.getElementById('btn-save-unit');
         btn.disabled = true; btn.innerHTML = "Menyimpan...";
         try {
-            await apiFetch("/api/categories", { method: "POST", body: JSON.stringify({ nama: val, type: "product_unit" }) });
+            await setDoc(doc(collection(db, 'product_units')), {
+                uid: auth.currentUser.uid,
+                nama_unit: document.getElementById('unit-nama').value
+            });
             closeModal(document.getElementById('modal-tambah-unit'));
             document.getElementById('form-tambah-unit').reset();
             if (window.populateUnitDropdown) window.populateUnitDropdown(); 
@@ -3892,13 +3940,13 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
 
     document.getElementById('form-tambah-produk')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!window.currentUser) return;
+        if (!auth.currentUser) return;
         const btn = document.getElementById('btn-save-produk');
         const prodId = document.getElementById('prod-id').value;
         btn.disabled = true; btn.innerHTML = "Menyimpan...";
         try {
             const data = {
-                uid: (window.currentUser?.uid || window._profileData?.uid),
+                uid: auth.currentUser.uid,
                 barcode: document.getElementById('prod-barcode').value,
                 nama: document.getElementById('prod-nama').value,
                 kategori: document.getElementById('prod-kategori').value,
@@ -3942,7 +3990,7 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
 
     document.getElementById('form-restock')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!window.currentUser) return;
+        if (!auth.currentUser) return;
         const btn = document.getElementById('btn-save-restock');
         if (btn) { btn.disabled = true; btn.innerHTML = "Memproses..."; }
         try {
@@ -4052,7 +4100,7 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
                     
                     const txRef = doc(collection(db, 'transactions'));
                     transaction.set(txRef, {
-                        uid: (window.currentUser?.uid || window._profileData?.uid),
+                        uid: auth.currentUser.uid,
                         tipe_tx: 'out',
                         nominal: kasDeductionTotal,
                         kategori: method === 'produksi' ? 'Restock / Produksi (Biaya Tambahan)' : 'Pembelian Barang Jadi',
@@ -4072,7 +4120,7 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
                 
                 const batchRef = doc(collection(db, 'stock_batches'));
                 transaction.set(batchRef, {
-                    uid: (window.currentUser?.uid || window._profileData?.uid),
+                    uid: auth.currentUser.uid,
                     product_id: productId,
                     qty_awal: qty,
                     qty_sisa: qty,
@@ -4092,7 +4140,7 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
                 if (hppTotal > 0) {
                     const txProdInRef = doc(collection(db, 'transactions'));
                     transaction.set(txProdInRef, {
-                        uid: (window.currentUser?.uid || window._profileData?.uid),
+                        uid: auth.currentUser.uid,
                         tipe_tx: 'in',
                         nominal: hppTotal,
                         kategori: 'Persediaan Barang Jadi',
@@ -4104,7 +4152,7 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
                     if (method === 'produksi') {
                         const txProdOutRef = doc(collection(db, 'transactions'));
                         transaction.set(txProdOutRef, {
-                            uid: (window.currentUser?.uid || window._profileData?.uid),
+                            uid: auth.currentUser.uid,
                             tipe_tx: 'out',
                             nominal: hppTotal,
                             kategori: 'Persediaan Bahan Baku',
@@ -4119,7 +4167,7 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
             closeModal(document.getElementById('modal-restock'));
             document.getElementById('form-restock').reset();
             loadProductsPage();
-            if (document.getElementById('home-balance')) loadDashboardData((window.currentUser?.uid || window._profileData?.uid)); 
+            if (document.getElementById('home-balance')) loadDashboardData(auth.currentUser.uid); 
             alert(`Restock (${method === 'produksi' ? 'Produksi' : 'Beli Jadi'}) berhasil! Stok masuk.`);
         } catch (err) { alert(err.message); }
         finally {
@@ -4130,7 +4178,7 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
     document.addEventListener('submit', async (e) => {
         if (e.target.id === 'form-pos-checkout') {
             e.preventDefault();
-            if (!window.currentUser) return;
+            if (!auth.currentUser) return;
             const btn = document.getElementById('btn-save-pos');
             
             const total = parseInt(document.getElementById('pos-checkout-total').dataset.val) || 0;
@@ -4173,7 +4221,8 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
                         productUpdates.push({ ref: prodRef, newStok: prodDoc.data().stok_gudang - item.qty });
                         
                         // Deduct batches FIFO
-                        const batchSnapRaw = { empty: true, docs: [] };
+                        const batchQ = query(collection(db, 'stock_batches'), where('uid', '==', auth.currentUser.uid), where('product_id', '==', item.id), where('status', '==', 'active'));
+                        const batchSnapRaw = await getDocs(batchQ);
                         let validBatches = [];
                         batchSnapRaw.forEach(b => validBatches.push(b));
                         validBatches.sort((a, b) => safeToMillis(a.data().tanggal_produksi) - safeToMillis(b.data().tanggal_produksi));
@@ -4207,7 +4256,7 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
                     // 4. Catat transaksi masuk
                     const txRef = doc(collection(db, 'transactions'));
                     transaction.set(txRef, {
-                        uid: (window.currentUser?.uid || window._profileData?.uid),
+                        uid: auth.currentUser.uid,
                         tipe_tx: 'in',
                         nominal: total,
                         kategori: 'Penjualan Kasir POS',
@@ -4220,7 +4269,7 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
                     if (totalHpp > 0) {
                         const txHppRef = doc(collection(db, 'transactions'));
                         transaction.set(txHppRef, {
-                            uid: (window.currentUser?.uid || window._profileData?.uid),
+                            uid: auth.currentUser.uid,
                             tipe_tx: 'out',
                             nominal: totalHpp,
                             kategori: 'Beban HPP',
@@ -4234,7 +4283,7 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
                 closeModal(document.getElementById('modal-pos-checkout'));
                 document.getElementById('form-pos-checkout').reset();
                 window.posCart = [];
-                loadPOSPage((window.currentUser?.uid || window._profileData?.uid)); // Refresh products
+                loadPOSPage(auth.currentUser.uid); // Refresh products
                 
                 alert("Pembayaran Berhasil! Kembalian: " + formatRupiah(cash - total));
                 
@@ -4483,7 +4532,7 @@ const authRes = await apiFetch('/api/auth/login', {
     body: JSON.stringify({ identifier: email, password: password })
 });
 localStorage.setItem('finmo_token', authRes.token);
-window.currentUser = authRes.user;
+auth.currentUser = authRes.user;
 MapsTo('dashboard');
 
             } catch (err) {
@@ -4556,9 +4605,6 @@ MapsTo('dashboard');
             }
 
             try {
-                // Check if email already exists in Firestore database
-                // Email check handled by backend API
-
                 
 const authRes = await apiFetch('/api/auth/register', {
     method: 'POST',
@@ -4571,7 +4617,7 @@ const authRes = await apiFetch('/api/auth/register', {
     })
 });
 localStorage.setItem('finmo_token', authRes.token);
-window.currentUser = authRes.user;
+auth.currentUser = authRes.user;
 alert("Pendaftaran berhasil! Selamat datang di finMo.");
 
                 MapsTo('dashboard');
@@ -4596,51 +4642,51 @@ alert("Pendaftaran berhasil! Selamat datang di finMo.");
         }
     });
 
-    function hideSplashScreen() {
-        const splash = document.getElementById('app-splash-screen');
-        if (splash) {
-            splash.classList.add('fade-out');
-            setTimeout(() => {
-                splash.style.display = 'none';
-            }, 500);
-        }
-    }
-
     window.addEventListener('popstate', (event) => {
         if (event.state && event.state.page) {
             MapsTo(event.state.page, false);
         } else {
             const hashPage = window.location.hash.replace('#', '');
-            if (hashPage && window.currentUser) {
+            if (hashPage && auth.currentUser) {
                 MapsTo(hashPage, false);
-            } else if (!window.currentUser && hashPage !== 'signup') {
+            } else if (!auth.currentUser && hashPage !== 'signup') {
                 MapsTo('signin', false);
             }
         }
     });
 
-    checkAuthSession().then((user) => {
-        const hashPage = window.location.hash.replace('#', '');
-        if (user) {
-            if (hashPage === 'signin' || hashPage === 'signup' || hashPage === 'hello' || !hashPage) {
-                MapsTo('dashboard', false);
-            } else {
-                MapsTo(hashPage, false);
-            }
-        } else {
-            if (hashPage === 'signup') {
-                MapsTo('signup', false);
-            } else if (hashPage === 'hello') {
-                MapsTo('hello', false);
-            } else {
-                MapsTo('signin', false);
-            }
+    // Handle Google redirect result on page load
+    getRedirectResult(auth).then(async (result) => {
+        if (result && result.user) {
+            console.log('Google redirect sign-in successful:', result.user.email);
+            await handleGoogleUserProfile(result.user);
         }
-        hideSplashScreen();
-    }).catch(err => {
-        console.error('Auth session check error:', err);
-        hideSplashScreen();
+    }).catch((err) => {
+        if (err.code && err.code !== 'auth/popup-closed-by-user') {
+            console.error('Redirect result error:', err);
+            alert('Login Google gagal: ' + (err.message || err));
+        }
     });
+
+    
+checkAuthSession().then((user) => {
+    const hashPage = window.location.hash.replace('#', '');
+    if (user) {
+        if (hashPage === 'signin' || hashPage === 'signup' || hashPage === 'hello' || !hashPage) {
+            MapsTo('dashboard', false);
+        } else {
+            MapsTo(hashPage, false);
+        }
+    } else {
+        if (hashPage === 'signup') {
+            MapsTo('signup', false);
+        } else if (hashPage === 'hello') {
+            MapsTo('hello', false);
+        } else {
+            MapsTo('signin', false);
+        }
+    }
+});
 }
 
 if (document.readyState === 'loading') {
@@ -4982,7 +5028,7 @@ window.renderTxCategoryDropdownList = function(items, type, searchTerm = '') {
 };
 
 window.populateTxCategoryDropdown = async function(type) {
-    if (!window.currentUser) return;
+    if (!auth.currentUser) return;
     const hiddenInput = document.getElementById('tx-category');
     if (!hiddenInput) return;
     
@@ -5006,7 +5052,7 @@ window.populateTxCategoryDropdown = async function(type) {
     
     try {
         // Firebase dynamic import removed
-        const catRes = await apiFetch("/api/categories"); const customItems = (catRes.data || []).filter(c => c.type === type).map(c => c.nama);
+        const q = query(collection(db, 'tx_categories'), where('uid', '==', auth.currentUser.uid), where('type', '==', type));
         
 const prodRes = await apiFetch('/api/products');
 window.posProducts = prodRes.data || [];
@@ -5028,13 +5074,13 @@ window.posProducts = prodRes.data || [];
 };
 
 window.populateUnitDropdown = async function() {
-    if (!window.currentUser) return;
+    if (!auth.currentUser) return;
     const select = document.getElementById('prod-unit');
     if (!select) return;
     
     try {
         // Firebase dynamic import removed
-        const unitRes = await apiFetch("/api/categories"); const items = (unitRes.data || []).filter(c => c.type === "product_unit").map(c => c.nama);
+        const q = query(collection(db, 'product_units'), where('uid', '==', auth.currentUser.uid));
         
 const prodRes = await apiFetch('/api/products');
 window.posProducts = prodRes.data || [];
@@ -5427,7 +5473,7 @@ document.addEventListener('click', async (e) => {
 await apiFetch('/api/partners?id=' + id, { method: 'DELETE' });
 
                 window.closeModal(document.getElementById('modal-tambah-mitra'));
-                if (window.loadPartnersPage) window.loadPartnersPage((window.currentUser?.uid || window._profileData?.uid));
+                if (window.loadPartnersPage) window.loadPartnersPage(auth.currentUser.uid);
                 alert('Mitra berhasil dihapus!');
             } catch (err) {
                 alert('Gagal menghapus mitra: ' + err.message);
@@ -5446,7 +5492,7 @@ window.loadRawMaterialsPage = async function(uid) {
 
     try {
         // Firebase dynamic import removed
-        const res = await apiFetch('/api/raw-materials'); const rawData = res.data || [];
+        const q = query(collection(db, 'raw_materials'), where('uid', '==', uid));
         
 const prodRes = await apiFetch('/api/products');
 window.posProducts = prodRes.data || [];
@@ -5619,8 +5665,9 @@ window.posProducts = prodRes.data || [];
             try {
                 // Firebase dynamic import removed
                 const walletSelect = document.getElementById('raw-wallet-id');
-                if (walletSelect && window.currentUser) {
-                    const wRes = await apiFetch("/api/wallets"); const wSnapshot = wRes.data || [];
+                if (walletSelect && auth.currentUser) {
+                    const wq = query(collection(db, 'wallets'), where('uid', '==', auth.currentUser.uid));
+                    const wSnapshot = await getDocs(wq);
                     let wHtml = '<option value="">Pilih Rekening / Kas</option>';
                     wSnapshot.forEach(docSnap => {
                         const data = docSnap.data();
@@ -5660,7 +5707,7 @@ window.posProducts = prodRes.data || [];
 
     document.getElementById('form-edit-bahan-baku')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!window.currentUser) return;
+        if (!auth.currentUser) return;
         const btn = document.getElementById('btn-save-edit-raw');
         if (btn) { btn.disabled = true; btn.innerHTML = "Menyimpan..."; }
         try {
@@ -5679,7 +5726,7 @@ await apiFetch('/api/raw-materials', { method: 'POST', body: JSON.stringify({ id
             
             closeModal(document.getElementById('modal-edit-bahan-baku'));
             alert("Bahan Baku berhasil diperbarui!");
-            loadRawMaterialsPage((window.currentUser?.uid || window._profileData?.uid));
+            loadRawMaterialsPage(auth.currentUser.uid);
         } catch (err) {
             alert("Gagal memperbarui bahan baku: " + err.message);
         } finally {
@@ -5690,7 +5737,7 @@ await apiFetch('/api/raw-materials', { method: 'POST', body: JSON.stringify({ id
     // --- RAW MATERIALS SUBMISSION ---
     document.getElementById('form-tambah-bahan-baku')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!window.currentUser) return;
+        if (!auth.currentUser) return;
         const btn = document.getElementById('btn-save-raw');
         if (btn) { btn.disabled = true; btn.innerHTML = "Menyimpan..."; }
         try {
@@ -5744,7 +5791,8 @@ await apiFetch('/api/raw-materials', { method: 'POST', body: JSON.stringify({ id
             const costPerUnit = totalHarga / qty;
 
             // Check raw material existence OUTSIDE runTransaction
-            const rawSnap = { empty: true, docs: [] };
+            const rawQ = query(collection(db, 'raw_materials'), where('uid', '==', auth.currentUser.uid), where('nama', '==', nama));
+            const rawSnap = await getDocs(rawQ);
             
             let existingRawRef = null;
             let existingRawData = null;
@@ -5765,7 +5813,7 @@ await apiFetch('/api/raw-materials', { method: 'POST', body: JSON.stringify({ id
                 // 2. Record Expense Transaction (Beban Bahan Baku)
                 const txRef = doc(collection(db, 'transactions'));
                 transaction.set(txRef, {
-                    uid: (window.currentUser?.uid || window._profileData?.uid),
+                    uid: auth.currentUser.uid,
                     tipe_tx: 'out',
                     nominal: totalHarga,
                     kategori: 'Persediaan Bahan Baku',
@@ -5778,7 +5826,7 @@ await apiFetch('/api/raw-materials', { method: 'POST', body: JSON.stringify({ id
                 if (!existingRawRef) {
                     const newRawRef = doc(collection(db, 'raw_materials'));
                     transaction.set(newRawRef, {
-                        uid: (window.currentUser?.uid || window._profileData?.uid),
+                        uid: auth.currentUser.uid,
                         nama: nama,
                         kategori: kategori,
                         satuan: satuan,
@@ -5815,7 +5863,7 @@ await apiFetch('/api/raw-materials', { method: 'POST', body: JSON.stringify({ id
             // Reload if on rawmaterials page
             const appContentHtml = document.getElementById('app-content').innerHTML;
             if (appContentHtml.includes('Bahan Baku')) {
-                loadRawMaterialsPage((window.currentUser?.uid || window._profileData?.uid));
+                loadRawMaterialsPage(auth.currentUser.uid);
             }
 
         } catch (err) {
@@ -5927,7 +5975,7 @@ document.getElementById('btn-delete-tx-action')?.addEventListener('click', async
                 transaction.delete(txRef);
             });
             
-            window.loadTransactionsPage((window.currentUser?.uid || window._profileData?.uid));
+            window.loadTransactionsPage(auth.currentUser.uid);
             alert('Transaksi berhasil dihapus');
         } catch (err) {
             console.error(err);
@@ -6094,7 +6142,7 @@ document.getElementById('chat-input-form')?.addEventListener('submit', async (e)
     e.preventDefault();
     const userMsgEl = document.getElementById('chat-user-message');
     const container = document.getElementById('chat-messages-container');
-    if (!userMsgEl || !container || !window.currentUser) return;
+    if (!userMsgEl || !container || !auth.currentUser) return;
 
     const message = userMsgEl.value.trim();
     if (!message) return;
@@ -6425,9 +6473,9 @@ function initSettingsState() {
     
     document.getElementById('btn-delete-account')?.addEventListener('click', () => {
         window.showConfirm('Hapus Akun', 'Apakah Anda yakin ingin menghapus akun ini beserta seluruh datanya? Tindakan ini tidak dapat dibatalkan.', async () => {
-            if (window.currentUser) {
+            if (auth.currentUser) {
                 try {
-                    await window.currentUser.delete();
+                    await auth.currentUser.delete();
                     alert('Akun Anda berhasil dihapus.');
                     location.reload();
                 } catch(e) {
