@@ -11,7 +11,12 @@ export async function apiFetch(endpoint, options = {}) {
     }
 
     const res = await fetch(endpoint, { ...options, headers });
-    const json = await res.json();
+    let json;
+    try {
+        json = await res.json();
+    } catch (e) {
+        json = { error: `Respons server tidak valid (${res.status})` };
+    }
     if (!res.ok) {
         throw new Error(json.error || 'Terjadi kesalahan pada server');
     }
