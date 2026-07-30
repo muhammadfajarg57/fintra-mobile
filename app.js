@@ -4708,6 +4708,7 @@ export async function loadPOSPage(uid) {
         console.error(e);
         document.getElementById('pos-product-grid').innerHTML = '<div class="col-span-full text-center text-red-500">Gagal memuat produk.</div>';
     }
+}
 
     window.renderPosProducts = function(products) {
         const grid = document.getElementById('pos-product-grid');
@@ -4838,44 +4839,13 @@ export async function loadPOSPage(uid) {
         
         const closeBtn = document.getElementById('close-modal-lainnya');
         if (closeBtn) {
-            emptyLi.className = 'p-4 text-center text-xs text-on-surface-variant/70 italic';
-            emptyLi.textContent = 'Kategori tidak ditemukan';
-            ul.appendChild(emptyLi);
-        } else {
-            filtered.forEach(item => {
-                const icon = window.getCategoryIcon(item);
-                const li = document.createElement('li');
-                li.className = 'flex items-center justify-between p-3 px-4 bg-surface-container-lowest rounded-xl mb-2 border border-outline-variant/30 active:scale-[0.98] transition-all text-on-surface font-semibold text-sm cursor-pointer hover:bg-slate-100/90 group';
-                li.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <span class="material-symbols-outlined text-[20px] text-on-surface-variant group-hover:text-primary transition-colors">${icon}</span>
-                        <span class="font-medium text-sm text-on-surface group-hover:text-primary transition-colors">${item}</span>
-                    </div>
-                    <span class="material-symbols-outlined text-[18px] text-on-surface-variant/40 group-hover:text-primary transition-colors">chevron_right</span>
-                `;
-                li.onclick = () => {
-                    document.getElementById('tx-category').value = item;
-                    const selector = document.getElementById('tx-category-selector');
-                    if(selector) selector.value = item;
-                    window.closeModal(modal);
-                };
-                ul.appendChild(li);
-            });
+            closeBtn.onclick = () => {
+                window.closeModal(modal);
+            };
         }
+        
+        window.openModal(modal);
     };
-    
-    renderList();
-    if (search) search.oninput = (e) => renderList(e.target.value);
-    
-    const closeBtn = document.getElementById('close-modal-lainnya');
-    if (closeBtn) {
-        closeBtn.onclick = () => {
-            window.closeModal(modal);
-        };
-    }
-    
-    window.openModal(modal);
-};
 
 window.getCategoryIcon = function(catName) {
     const name = (catName || '').toLowerCase();
