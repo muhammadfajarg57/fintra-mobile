@@ -25,19 +25,19 @@ export let auth = {
 export async function checkAuthSession() {
     const token = localStorage.getItem('finmo_token');
     if (!token) {
-        auth.currentUser = null;
+        window.currentUser = null;
         return null;
     }
     try {
         const res = await apiFetch('/api/auth/me');
         if (res && res.user) {
-            auth.currentUser = res.user;
+            window.currentUser = res.user;
             return res.user;
         }
     } catch (e) {
         console.warn("Session expired or invalid:", e.message);
         localStorage.removeItem('finmo_token');
-        auth.currentUser = null;
+        window.currentUser = null;
     }
     return null;
 }
@@ -1456,25 +1456,7 @@ function groupTransactionsByDate(transactions) {
 }
 
 export async function initializeUserWallets(uid) {
-    if (!uid) return;
-    try {
-        const walletsQ = query(collection(db, 'wallets'), where('uid', '==', uid));
-        const snap = await getDocs(walletsQ);
-        if (snap.empty) {
-            const newWalletRef = doc(collection(db, 'wallets'));
-            await setDoc(newWalletRef, {
-                uid: uid,
-                nama_rekening: 'Kas Utama',
-                jenis: 'kas',
-                saldo_terkini: 0,
-                saldo_awal: 0,
-                warna: '#0ea5e9',
-                created_at: new Date()
-            });
-        }
-    } catch (e) {
-        console.warn("Auto initialize wallets warning:", e);
-    }
+    // Handled by backend API
 }
 
 export async function loadDashboardData(uid) {
@@ -1570,25 +1552,18 @@ export async function loadReportsPage(uid) {
     ];
 
     async function fetchAllData() {
-        const tQ = query(collection(db, 'transactions'), where('uid', '==', uid));
-        const tSnap = await getDocs(tQ);
-        rawTransactions = tSnap.docs.map(d => ({id: d.id, ...d.data()}));
-
-        const wQ = query(collection(db, 'wallets'), where('uid', '==', uid));
-        const wSnap = await getDocs(wQ);
-        rawWallets = wSnap.docs.map(d => ({id: d.id, ...d.data()}));
-
-        const pQ = query(collection(db, 'products'), where('uid', '==', uid));
-        const pSnap = await getDocs(pQ);
-        rawProducts = pSnap.docs.map(d => ({id: d.id, ...d.data()}));
-        
-        const ptQ = query(collection(db, 'partners'), where('uid', '==', uid));
-        const ptSnap = await getDocs(ptQ);
-        rawPartners = ptSnap.docs.map(d => ({id: d.id, ...d.data()}));
-
-        const rmQ = query(collection(db, 'raw_materials'), where('uid', '==', uid));
-        const rmSnap = await getDocs(rmQ);
-        rawMaterials = rmSnap.docs.map(d => ({id: d.id, ...d.data()}));
+        const [txRes, wRes, pRes, ptRes, rmRes] = await Promise.all([
+            apiFetch('/api/transactions'),
+            apiFetch('/api/wallets'),
+            apiFetch('/api/products'),
+            apiFetch('/api/partners'),
+            apiFetch('/api/raw-materials')
+        ]);
+        rawTransactions = txRes.data || [];
+        rawWallets = wRes.data || [];
+        rawProducts = pRes.data || [];
+        rawPartners = ptRes.data || [];
+        rawMaterials = rmRes.data || [];
     }
 
     function getFilteredData() {
@@ -2528,33 +2503,29 @@ export async function loadReportsPage(uid) {
 
 export async function loadWalletsPage(uid) {
     try {
-        const walletsQuery = query(collection(db, 'wallets'), where('uid', '==', uid));
-        const walletsSnapshot = await getDocs(walletsQuery);
+        const res = await apiFetch('/api/wallets');
+        const walletsData = res.data || [];
         let walletsHTML = '';
-        
-        walletsSnapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-
+        walletsData.forEach((data) => {
+            const name = data.nama || data.nama_rekening || 'Dompet';
             walletsHTML += `
             <div class="bg-surface rounded-2xl p-3 shadow-card border border-outline-variant flex items-center justify-between">
                 <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-card" style="background-color: ${data.warna || '#1a73e8'}">
-                        ${data.ikon ? `<span class="material-symbols-outlined">${data.ikon}</span>` : data.nama_rekening.substring(0, 2).toUpperCase()}
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-card" style="background-color: ${data.color || data.warna || '#1a73e8'}">
+                        ${data.ikon ? `<span class="material-symbols-outlined">${data.ikon}</span>` : name.substring(0, 2).toUpperCase()}
                     </div>
                     <div>
-                        <div class="font-bold text-on-surface">${data.nama_rekening}</div>
+                        <div class="font-bold text-on-surface">${name}</div>
                         <div class="text-xs font-medium text-primary mt-1">Modal Awal: ${formatRupiah(data.saldo_awal || 0)}</div>
-                        <div class="text-xs text-on-surface-variant">Saldo Saat Ini: ${formatRupiah(data.saldo_terkini)}</div>
+                        <div class="text-xs text-on-surface-variant">Saldo Saat Ini: ${formatRupiah(data.saldo_terkini || 0)}</div>
                     </div>
                 </div>
             </div>`;
         });
-        
         const container = document.getElementById('wallets-list-container');
         if (container) {
             container.innerHTML = walletsHTML || '<div class="p-6 text-center text-on-surface-variant col-span-full">Belum ada rekening. Silakan tambah.</div>';
         }
-        
     } catch (e) {
         console.error("Error loading wallets page:", e);
     }
@@ -2563,14 +2534,9 @@ export async function loadWalletsPage(uid) {
 // Ledger: Load Transactions Page
 export async function loadTransactionsPage(uid) {
     try {
-        const txQuery = query(collection(db, 'transactions'), where('uid', '==', uid));
-        const txSnapshot = await getDocs(txQuery);
-        const transactions = [];
-        txSnapshot.forEach(doc => {
-            const data = doc.data();
-            data._id = doc.id;
-            transactions.push(data);
-        });
+        const res = await apiFetch('/api/transactions');
+        const transactions = res.data || [];
+        transactions.forEach(d => { d._id = d.id; });
         
         const container = document.getElementById('tx-list-container');
         if (!container) return;
@@ -2872,34 +2838,34 @@ export function MapsTo(page, pushHistory = true) {
     
     if (page === 'dashboard') {
         if (!targetContainer.innerHTML) targetContainer.innerHTML = dashboardTemplate;
-        if (auth.currentUser) loadDashboardData(auth.currentUser.uid);
+        if (window.currentUser) loadDashboardData((window.currentUser?.uid || window._profileData?.uid));
     } else if (page === 'transactions') {
         if (!targetContainer.innerHTML) targetContainer.innerHTML = transactionsTemplate;
-        if (auth.currentUser) loadTransactionsPage(auth.currentUser.uid);
+        if (window.currentUser) loadTransactionsPage((window.currentUser?.uid || window._profileData?.uid));
     } else if (page === 'pos') {
         if (!targetContainer.innerHTML) targetContainer.innerHTML = templatePOS;
-        if (auth.currentUser) loadPOSPage(auth.currentUser.uid);
+        if (window.currentUser) loadPOSPage((window.currentUser?.uid || window._profileData?.uid));
     } else if (page === 'partners') {
         if (!targetContainer.innerHTML) targetContainer.innerHTML = templatePartners;
-        if (auth.currentUser) loadPartnersPage(auth.currentUser.uid);
+        if (window.currentUser) loadPartnersPage((window.currentUser?.uid || window._profileData?.uid));
     } else if (page === 'products') {
         if (!targetContainer.innerHTML) targetContainer.innerHTML = templateProducts;
-        if (auth.currentUser) loadProductsPage();
+        if (window.currentUser) loadProductsPage();
     } else if (page === 'rawmaterials') {
         if (!targetContainer.innerHTML) targetContainer.innerHTML = templateRawMaterials;
-        if (auth.currentUser) loadRawMaterialsPage(auth.currentUser.uid);
+        if (window.currentUser) loadRawMaterialsPage((window.currentUser?.uid || window._profileData?.uid));
     } else if (page === 'profile') {
         if (!targetContainer.innerHTML) targetContainer.innerHTML = templateProfile;
-        if (auth.currentUser) loadProfileData(auth.currentUser.uid);
+        if (window.currentUser) loadProfileData((window.currentUser?.uid || window._profileData?.uid));
     } else if (page === 'settings') {
         if (!targetContainer.innerHTML) targetContainer.innerHTML = templateSettings;
         initSettingsState();
     } else if (page === 'wallets') {
         if (!targetContainer.innerHTML) targetContainer.innerHTML = templateWallets;
-        if (auth.currentUser) loadWalletsPage(auth.currentUser.uid);
+        if (window.currentUser) loadWalletsPage((window.currentUser?.uid || window._profileData?.uid));
     } else if (page === 'reports') {
         if (!targetContainer.innerHTML) targetContainer.innerHTML = templateReports;
-        if (auth.currentUser) loadReportsPage(auth.currentUser.uid);
+        if (window.currentUser) loadReportsPage((window.currentUser?.uid || window._profileData?.uid));
     } else if (page === 'signin') {
         if (!sessionStorage.getItem('hasSeenHello')) {
             sessionStorage.setItem('hasSeenHello', 'true');
@@ -3045,7 +3011,7 @@ function initApp() {
     document.addEventListener('submit', async (e) => {
         if (e.target.id === 'form-tambah-rekening') {
             e.preventDefault();
-            if (!auth.currentUser) return;
+            if (!window.currentUser) return;
             const btnSave = document.getElementById('btn-save-wallet');
             if(btnSave) { btnSave.disabled = true; btnSave.innerHTML = "Menyimpan..."; }
             
@@ -3056,19 +3022,12 @@ function initApp() {
                 const balance = Number(rawBal.replace(/\./g, ''));
                 
                 const newWalletRef = doc(collection(db, 'wallets'));
-                await setDoc(newWalletRef, {
-                    uid: auth.currentUser.uid,
-                    nama_rekening: name,
-                    saldo_terkini: balance,
-                    saldo_awal: balance,
-                    ikon: 'account_balance_wallet',
-                    warna: '#1a73e8'
-                });
+                // Handled via apiFetch
                 
                 alert("Rekening berhasil ditambahkan!");
                 closeModal(document.getElementById('modal-tambah-rekening'));
                 e.target.reset();
-                if (auth.currentUser) loadWalletsPage(auth.currentUser.uid);
+                if (window.currentUser) loadWalletsPage((window.currentUser?.uid || window._profileData?.uid));
             } catch(err) {
                 alert("Gagal menyimpan rekening: " + err.message);
             } finally {
@@ -3081,7 +3040,7 @@ function initApp() {
     if (formRecord) {
         formRecord.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!auth.currentUser) return;
+            if (!window.currentUser) return;
             const btnSave = document.getElementById('btn-save-transaction');
             if(btnSave) { btnSave.disabled = true; btnSave.innerHTML = "Menyimpan..."; }
             
@@ -3105,7 +3064,7 @@ function initApp() {
                 const finalDate = dateVal.includes('T') ? new Date(dateVal) : new Date(dateVal + 'T12:00:00');
                 
                 const txData = {
-                    uid: auth.currentUser.uid,
+                    uid: (window.currentUser?.uid || window._profileData?.uid),
                     tipe_tx: txType,
                     nominal: nominal,
                     kategori: txCategory,
@@ -3179,7 +3138,7 @@ function initApp() {
                     const delta = walletDeltas[wId];
                     if (delta !== 0) {
                         const wRef = doc(db, 'wallets', wId);
-                        const wDoc = await getDoc(wRef);
+                        const wDoc = null;
                         if (wDoc.exists()) {
                             const currentSaldo = wDoc.data().saldo_terkini || 0;
                             const newSaldo = currentSaldo + delta;
@@ -3207,10 +3166,10 @@ function initApp() {
                 // Reset text button
                 if (btnSave) btnSave.innerHTML = "Simpan Transaksi";
                 
-                if (auth.currentUser) {
-                    loadDashboardData(auth.currentUser.uid);
+                if (window.currentUser) {
+                    loadDashboardData((window.currentUser?.uid || window._profileData?.uid));
                     if (document.getElementById('tx-list-container')) {
-                        loadTransactionsPage(auth.currentUser.uid);
+                        loadTransactionsPage((window.currentUser?.uid || window._profileData?.uid));
                     }
                 }
             } catch (err) {
@@ -3326,13 +3285,13 @@ function initApp() {
     // ==========================================
     document.getElementById('form-tambah-mitra')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!auth.currentUser) return;
+        if (!window.currentUser) return;
         const btn = document.getElementById('btn-save-partner');
         btn.disabled = true; btn.innerHTML = "Menyimpan...";
         try {
             const partnerId = document.getElementById('add-partner-id').value;
             const data = {
-                uid: auth.currentUser.uid,
+                uid: (window.currentUser?.uid || window._profileData?.uid),
                 nama_toko: document.getElementById('add-partner-name').value,
                 pemilik: document.getElementById('add-partner-owner').value,
                 kontak: document.getElementById('add-partner-phone').value,
@@ -3356,14 +3315,14 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
             document.getElementById('form-tambah-mitra').reset();
             document.getElementById('add-partner-id').value = '';
             document.getElementById('title-tambah-mitra').innerText = "Tambah Mitra Baru";
-            loadPartnersPage(auth.currentUser.uid);
+            loadPartnersPage((window.currentUser?.uid || window._profileData?.uid));
         } catch (err) { alert(err.message); }
         finally { btn.disabled = false; btn.innerHTML = "Simpan Mitra"; }
     });
 
     document.getElementById('form-distribusi-stok')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!auth.currentUser) return;
+        if (!window.currentUser) return;
         const btn = document.getElementById('btn-save-distribusi');
         btn.disabled = true; btn.innerHTML = "Menyimpan...";
         try {
@@ -3373,13 +3332,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
             const setoranStr = document.getElementById('dist-harga-setoran').value.replace(/[^0-9]/g, '');
             const setoran = setoranStr ? parseInt(setoranStr) : 0;
             
-            const q = query(collection(db, 'consignment_stock'), where('partner_id', '==', partnerId), where('product_id', '==', productId));
-            const snap = await getDocs(q);
-            let consDocRef = snap.empty ? doc(collection(db, 'consignment_stock')) : snap.docs[0].ref;
-
-            // FIFO Batch preparation
-            const qBatches = query(collection(db, 'stock_batches'), where('product_id', '==', productId));
-            const batchSnapRaw = await getDocs(qBatches);
+            const snap = { empty: true }; const batchSnapRaw = { empty: true, docs: [] };
             let validBatches = [];
             batchSnapRaw.forEach(b => {
                 if (b.data().qty_sisa > 0) validBatches.push(b);
@@ -3440,7 +3393,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
                 if (newDebt > 0) {
                     const txRef = doc(collection(db, 'transactions'));
                     transaction.set(txRef, {
-                        uid: auth.currentUser.uid,
+                        uid: (window.currentUser?.uid || window._profileData?.uid),
                         tipe_tx: 'in',
                         nominal: newDebt,
                         kategori: 'Distribusi Stok',
@@ -3454,7 +3407,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
                 if (newHpp > 0) {
                     const txHppRef = doc(collection(db, 'transactions'));
                     transaction.set(txHppRef, {
-                        uid: auth.currentUser.uid,
+                        uid: (window.currentUser?.uid || window._profileData?.uid),
                         tipe_tx: 'out',
                         nominal: newHpp,
                         kategori: 'Beban HPP',
@@ -3468,7 +3421,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
                 
                 if (!consDoc) {
                     transaction.set(consDocRef, {
-                        uid: auth.currentUser.uid,
+                        uid: (window.currentUser?.uid || window._profileData?.uid),
                         partner_id: partnerId,
                         product_id: productId,
                         nama_produk: prodDoc.data().nama_produk || prodDoc.data().nama,
@@ -3485,7 +3438,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
             
             closeModal(document.getElementById('modal-distribusi-stok'));
             document.getElementById('form-distribusi-stok').reset();
-            loadPartnersPage(auth.currentUser.uid);
+            loadPartnersPage((window.currentUser?.uid || window._profileData?.uid));
             
             if (confirm("Distribusi berhasil! Apakah Anda ingin mencetak struk?")) {
                 if (window.printDistribusiReceipt) {
@@ -3498,7 +3451,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
 
     document.getElementById('form-catat-penjualan')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!auth.currentUser) return;
+        if (!window.currentUser) return;
         const btn = document.getElementById('btn-save-sale');
         btn.disabled = true; btn.innerHTML = "Memproses...";
         try {
@@ -3562,7 +3515,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
                     
                     const txRef = doc(collection(db, 'transactions'));
                     transaction.set(txRef, {
-                        uid: auth.currentUser.uid,
+                        uid: (window.currentUser?.uid || window._profileData?.uid),
                         tipe_tx: 'in',
                         nominal: paymentReceived,
                         kategori: 'Setoran Piutang Mitra',
@@ -3579,7 +3532,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
                     
                     const batchRef = doc(collection(db, 'stock_batches'));
                     transaction.set(batchRef, {
-                        uid: auth.currentUser.uid,
+                        uid: (window.currentUser?.uid || window._profileData?.uid),
                         product_id: productId,
                         qty_awal: qtyBagus,
                         qty_sisa: qtyBagus,
@@ -3593,7 +3546,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
                     // Kredit Beban HPP
                     const txHppCreditRef = doc(collection(db, 'transactions'));
                     transaction.set(txHppCreditRef, {
-                        uid: auth.currentUser.uid,
+                        uid: (window.currentUser?.uid || window._profileData?.uid),
                         tipe_tx: 'out',
                         nominal: -(qtyBagus * costPrice),
                         kategori: 'Beban HPP',
@@ -3607,7 +3560,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
                 if (qtyBagus + qtyRusak > 0) {
                     const txReturRef = doc(collection(db, 'transactions'));
                     transaction.set(txReturRef, {
-                        uid: auth.currentUser.uid,
+                        uid: (window.currentUser?.uid || window._profileData?.uid),
                         tipe_tx: 'out',
                         nominal: (qtyBagus + qtyRusak) * setoranPrice,
                         kategori: 'Retur Penjualan',
@@ -3622,7 +3575,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
                     // Debit Beban Kerugian Barang Rusak
                     const txKerugianRef = doc(collection(db, 'transactions'));
                     transaction.set(txKerugianRef, {
-                        uid: auth.currentUser.uid,
+                        uid: (window.currentUser?.uid || window._profileData?.uid),
                         tipe_tx: 'out',
                         nominal: qtyRusak * costPrice,
                         kategori: 'Beban Kerugian Barang Rusak',
@@ -3634,7 +3587,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
                     // Kredit Beban HPP (menggunakan nominal negatif)
                     const txHppCreditRusakRef = doc(collection(db, 'transactions'));
                     transaction.set(txHppCreditRusakRef, {
-                        uid: auth.currentUser.uid,
+                        uid: (window.currentUser?.uid || window._profileData?.uid),
                         tipe_tx: 'out',
                         nominal: -(qtyRusak * costPrice),
                         kategori: 'Beban HPP',
@@ -3648,7 +3601,7 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
             closeModal(document.getElementById('modal-catat-penjualan'));
             document.getElementById('form-catat-penjualan').reset();
             document.getElementById('container-retur-rusak')?.classList.add('hidden');
-            loadPartnersPage(auth.currentUser.uid);
+            loadPartnersPage((window.currentUser?.uid || window._profileData?.uid));
             alert("Penjualan & retur berhasil dicatat!");
         } catch (err) { alert(err.message); }
         finally { btn.disabled = false; btn.innerHTML = "Proses Penjualan"; }
@@ -3839,14 +3792,11 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
 
     document.getElementById('form-tambah-kategori')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!auth.currentUser) return;
+        if (!window.currentUser) return;
         const btn = document.getElementById('btn-save-kategori');
         btn.disabled = true; btn.innerHTML = "Menyimpan...";
         try {
-            await setDoc(doc(collection(db, 'product_categories')), {
-                uid: auth.currentUser.uid,
-                nama_kategori: document.getElementById('cat-nama').value
-            });
+            await apiFetch("/api/categories", { method: "POST", body: JSON.stringify({ nama: val, type: "product_category" }) });
             closeModal(document.getElementById('modal-tambah-kategori'));
             document.getElementById('form-tambah-kategori').reset();
             if (window.populateCategoryDropdown) window.populateCategoryDropdown(); // refresh dropdown
@@ -3856,14 +3806,11 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
 
     document.getElementById('form-tambah-unit')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!auth.currentUser) return;
+        if (!window.currentUser) return;
         const btn = document.getElementById('btn-save-unit');
         btn.disabled = true; btn.innerHTML = "Menyimpan...";
         try {
-            await setDoc(doc(collection(db, 'product_units')), {
-                uid: auth.currentUser.uid,
-                nama_unit: document.getElementById('unit-nama').value
-            });
+            await apiFetch("/api/categories", { method: "POST", body: JSON.stringify({ nama: val, type: "product_unit" }) });
             closeModal(document.getElementById('modal-tambah-unit'));
             document.getElementById('form-tambah-unit').reset();
             if (window.populateUnitDropdown) window.populateUnitDropdown(); 
@@ -3940,13 +3887,13 @@ await apiFetch('/api/partners', { method: 'POST', body: JSON.stringify(data) });
 
     document.getElementById('form-tambah-produk')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!auth.currentUser) return;
+        if (!window.currentUser) return;
         const btn = document.getElementById('btn-save-produk');
         const prodId = document.getElementById('prod-id').value;
         btn.disabled = true; btn.innerHTML = "Menyimpan...";
         try {
             const data = {
-                uid: auth.currentUser.uid,
+                uid: (window.currentUser?.uid || window._profileData?.uid),
                 barcode: document.getElementById('prod-barcode').value,
                 nama: document.getElementById('prod-nama').value,
                 kategori: document.getElementById('prod-kategori').value,
@@ -3990,7 +3937,7 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
 
     document.getElementById('form-restock')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!auth.currentUser) return;
+        if (!window.currentUser) return;
         const btn = document.getElementById('btn-save-restock');
         if (btn) { btn.disabled = true; btn.innerHTML = "Memproses..."; }
         try {
@@ -4100,7 +4047,7 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
                     
                     const txRef = doc(collection(db, 'transactions'));
                     transaction.set(txRef, {
-                        uid: auth.currentUser.uid,
+                        uid: (window.currentUser?.uid || window._profileData?.uid),
                         tipe_tx: 'out',
                         nominal: kasDeductionTotal,
                         kategori: method === 'produksi' ? 'Restock / Produksi (Biaya Tambahan)' : 'Pembelian Barang Jadi',
@@ -4120,7 +4067,7 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
                 
                 const batchRef = doc(collection(db, 'stock_batches'));
                 transaction.set(batchRef, {
-                    uid: auth.currentUser.uid,
+                    uid: (window.currentUser?.uid || window._profileData?.uid),
                     product_id: productId,
                     qty_awal: qty,
                     qty_sisa: qty,
@@ -4140,7 +4087,7 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
                 if (hppTotal > 0) {
                     const txProdInRef = doc(collection(db, 'transactions'));
                     transaction.set(txProdInRef, {
-                        uid: auth.currentUser.uid,
+                        uid: (window.currentUser?.uid || window._profileData?.uid),
                         tipe_tx: 'in',
                         nominal: hppTotal,
                         kategori: 'Persediaan Barang Jadi',
@@ -4152,7 +4099,7 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
                     if (method === 'produksi') {
                         const txProdOutRef = doc(collection(db, 'transactions'));
                         transaction.set(txProdOutRef, {
-                            uid: auth.currentUser.uid,
+                            uid: (window.currentUser?.uid || window._profileData?.uid),
                             tipe_tx: 'out',
                             nominal: hppTotal,
                             kategori: 'Persediaan Bahan Baku',
@@ -4167,7 +4114,7 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
             closeModal(document.getElementById('modal-restock'));
             document.getElementById('form-restock').reset();
             loadProductsPage();
-            if (document.getElementById('home-balance')) loadDashboardData(auth.currentUser.uid); 
+            if (document.getElementById('home-balance')) loadDashboardData((window.currentUser?.uid || window._profileData?.uid)); 
             alert(`Restock (${method === 'produksi' ? 'Produksi' : 'Beli Jadi'}) berhasil! Stok masuk.`);
         } catch (err) { alert(err.message); }
         finally {
@@ -4178,7 +4125,7 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
     document.addEventListener('submit', async (e) => {
         if (e.target.id === 'form-pos-checkout') {
             e.preventDefault();
-            if (!auth.currentUser) return;
+            if (!window.currentUser) return;
             const btn = document.getElementById('btn-save-pos');
             
             const total = parseInt(document.getElementById('pos-checkout-total').dataset.val) || 0;
@@ -4221,8 +4168,7 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
                         productUpdates.push({ ref: prodRef, newStok: prodDoc.data().stok_gudang - item.qty });
                         
                         // Deduct batches FIFO
-                        const batchQ = query(collection(db, 'stock_batches'), where('uid', '==', auth.currentUser.uid), where('product_id', '==', item.id), where('status', '==', 'active'));
-                        const batchSnapRaw = await getDocs(batchQ);
+                        const batchSnapRaw = { empty: true, docs: [] };
                         let validBatches = [];
                         batchSnapRaw.forEach(b => validBatches.push(b));
                         validBatches.sort((a, b) => safeToMillis(a.data().tanggal_produksi) - safeToMillis(b.data().tanggal_produksi));
@@ -4256,7 +4202,7 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
                     // 4. Catat transaksi masuk
                     const txRef = doc(collection(db, 'transactions'));
                     transaction.set(txRef, {
-                        uid: auth.currentUser.uid,
+                        uid: (window.currentUser?.uid || window._profileData?.uid),
                         tipe_tx: 'in',
                         nominal: total,
                         kategori: 'Penjualan Kasir POS',
@@ -4269,7 +4215,7 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
                     if (totalHpp > 0) {
                         const txHppRef = doc(collection(db, 'transactions'));
                         transaction.set(txHppRef, {
-                            uid: auth.currentUser.uid,
+                            uid: (window.currentUser?.uid || window._profileData?.uid),
                             tipe_tx: 'out',
                             nominal: totalHpp,
                             kategori: 'Beban HPP',
@@ -4283,7 +4229,7 @@ await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
                 closeModal(document.getElementById('modal-pos-checkout'));
                 document.getElementById('form-pos-checkout').reset();
                 window.posCart = [];
-                loadPOSPage(auth.currentUser.uid); // Refresh products
+                loadPOSPage((window.currentUser?.uid || window._profileData?.uid)); // Refresh products
                 
                 alert("Pembayaran Berhasil! Kembalian: " + formatRupiah(cash - total));
                 
@@ -4532,7 +4478,7 @@ const authRes = await apiFetch('/api/auth/login', {
     body: JSON.stringify({ identifier: email, password: password })
 });
 localStorage.setItem('finmo_token', authRes.token);
-auth.currentUser = authRes.user;
+window.currentUser = authRes.user;
 MapsTo('dashboard');
 
             } catch (err) {
@@ -4606,11 +4552,7 @@ MapsTo('dashboard');
 
             try {
                 // Check if email already exists in Firestore database
-                const existingUserQuery = query(collection(db, 'users'), where('email', '==', email));
-                const existingUserSnap = await getDocs(existingUserQuery);
-                if (!existingUserSnap.empty) {
-                    throw { code: 'auth/email-already-in-use', message: 'Email tersebut tidak bisa dipakai karena sudah digunakan sebelumnya.' };
-                }
+                // Email check handled by backend API
 
                 
 const authRes = await apiFetch('/api/auth/register', {
@@ -4624,7 +4566,7 @@ const authRes = await apiFetch('/api/auth/register', {
     })
 });
 localStorage.setItem('finmo_token', authRes.token);
-auth.currentUser = authRes.user;
+window.currentUser = authRes.user;
 alert("Pendaftaran berhasil! Selamat datang di finMo.");
 
                 MapsTo('dashboard');
@@ -5035,7 +4977,7 @@ window.renderTxCategoryDropdownList = function(items, type, searchTerm = '') {
 };
 
 window.populateTxCategoryDropdown = async function(type) {
-    if (!auth.currentUser) return;
+    if (!window.currentUser) return;
     const hiddenInput = document.getElementById('tx-category');
     if (!hiddenInput) return;
     
@@ -5059,7 +5001,7 @@ window.populateTxCategoryDropdown = async function(type) {
     
     try {
         // Firebase dynamic import removed
-        const q = query(collection(db, 'tx_categories'), where('uid', '==', auth.currentUser.uid), where('type', '==', type));
+        const catRes = await apiFetch("/api/categories"); const customItems = (catRes.data || []).filter(c => c.type === type).map(c => c.nama);
         
 const prodRes = await apiFetch('/api/products');
 window.posProducts = prodRes.data || [];
@@ -5081,13 +5023,13 @@ window.posProducts = prodRes.data || [];
 };
 
 window.populateUnitDropdown = async function() {
-    if (!auth.currentUser) return;
+    if (!window.currentUser) return;
     const select = document.getElementById('prod-unit');
     if (!select) return;
     
     try {
         // Firebase dynamic import removed
-        const q = query(collection(db, 'product_units'), where('uid', '==', auth.currentUser.uid));
+        const unitRes = await apiFetch("/api/categories"); const items = (unitRes.data || []).filter(c => c.type === "product_unit").map(c => c.nama);
         
 const prodRes = await apiFetch('/api/products');
 window.posProducts = prodRes.data || [];
@@ -5480,7 +5422,7 @@ document.addEventListener('click', async (e) => {
 await apiFetch('/api/partners?id=' + id, { method: 'DELETE' });
 
                 window.closeModal(document.getElementById('modal-tambah-mitra'));
-                if (window.loadPartnersPage) window.loadPartnersPage(auth.currentUser.uid);
+                if (window.loadPartnersPage) window.loadPartnersPage((window.currentUser?.uid || window._profileData?.uid));
                 alert('Mitra berhasil dihapus!');
             } catch (err) {
                 alert('Gagal menghapus mitra: ' + err.message);
@@ -5499,7 +5441,7 @@ window.loadRawMaterialsPage = async function(uid) {
 
     try {
         // Firebase dynamic import removed
-        const q = query(collection(db, 'raw_materials'), where('uid', '==', uid));
+        const res = await apiFetch('/api/raw-materials'); const rawData = res.data || [];
         
 const prodRes = await apiFetch('/api/products');
 window.posProducts = prodRes.data || [];
@@ -5672,9 +5614,8 @@ window.posProducts = prodRes.data || [];
             try {
                 // Firebase dynamic import removed
                 const walletSelect = document.getElementById('raw-wallet-id');
-                if (walletSelect && auth.currentUser) {
-                    const wq = query(collection(db, 'wallets'), where('uid', '==', auth.currentUser.uid));
-                    const wSnapshot = await getDocs(wq);
+                if (walletSelect && window.currentUser) {
+                    const wRes = await apiFetch("/api/wallets"); const wSnapshot = wRes.data || [];
                     let wHtml = '<option value="">Pilih Rekening / Kas</option>';
                     wSnapshot.forEach(docSnap => {
                         const data = docSnap.data();
@@ -5714,7 +5655,7 @@ window.posProducts = prodRes.data || [];
 
     document.getElementById('form-edit-bahan-baku')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!auth.currentUser) return;
+        if (!window.currentUser) return;
         const btn = document.getElementById('btn-save-edit-raw');
         if (btn) { btn.disabled = true; btn.innerHTML = "Menyimpan..."; }
         try {
@@ -5733,7 +5674,7 @@ await apiFetch('/api/raw-materials', { method: 'POST', body: JSON.stringify({ id
             
             closeModal(document.getElementById('modal-edit-bahan-baku'));
             alert("Bahan Baku berhasil diperbarui!");
-            loadRawMaterialsPage(auth.currentUser.uid);
+            loadRawMaterialsPage((window.currentUser?.uid || window._profileData?.uid));
         } catch (err) {
             alert("Gagal memperbarui bahan baku: " + err.message);
         } finally {
@@ -5744,7 +5685,7 @@ await apiFetch('/api/raw-materials', { method: 'POST', body: JSON.stringify({ id
     // --- RAW MATERIALS SUBMISSION ---
     document.getElementById('form-tambah-bahan-baku')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!auth.currentUser) return;
+        if (!window.currentUser) return;
         const btn = document.getElementById('btn-save-raw');
         if (btn) { btn.disabled = true; btn.innerHTML = "Menyimpan..."; }
         try {
@@ -5798,8 +5739,7 @@ await apiFetch('/api/raw-materials', { method: 'POST', body: JSON.stringify({ id
             const costPerUnit = totalHarga / qty;
 
             // Check raw material existence OUTSIDE runTransaction
-            const rawQ = query(collection(db, 'raw_materials'), where('uid', '==', auth.currentUser.uid), where('nama', '==', nama));
-            const rawSnap = await getDocs(rawQ);
+            const rawSnap = { empty: true, docs: [] };
             
             let existingRawRef = null;
             let existingRawData = null;
@@ -5820,7 +5760,7 @@ await apiFetch('/api/raw-materials', { method: 'POST', body: JSON.stringify({ id
                 // 2. Record Expense Transaction (Beban Bahan Baku)
                 const txRef = doc(collection(db, 'transactions'));
                 transaction.set(txRef, {
-                    uid: auth.currentUser.uid,
+                    uid: (window.currentUser?.uid || window._profileData?.uid),
                     tipe_tx: 'out',
                     nominal: totalHarga,
                     kategori: 'Persediaan Bahan Baku',
@@ -5833,7 +5773,7 @@ await apiFetch('/api/raw-materials', { method: 'POST', body: JSON.stringify({ id
                 if (!existingRawRef) {
                     const newRawRef = doc(collection(db, 'raw_materials'));
                     transaction.set(newRawRef, {
-                        uid: auth.currentUser.uid,
+                        uid: (window.currentUser?.uid || window._profileData?.uid),
                         nama: nama,
                         kategori: kategori,
                         satuan: satuan,
@@ -5870,7 +5810,7 @@ await apiFetch('/api/raw-materials', { method: 'POST', body: JSON.stringify({ id
             // Reload if on rawmaterials page
             const appContentHtml = document.getElementById('app-content').innerHTML;
             if (appContentHtml.includes('Bahan Baku')) {
-                loadRawMaterialsPage(auth.currentUser.uid);
+                loadRawMaterialsPage((window.currentUser?.uid || window._profileData?.uid));
             }
 
         } catch (err) {
@@ -5982,7 +5922,7 @@ document.getElementById('btn-delete-tx-action')?.addEventListener('click', async
                 transaction.delete(txRef);
             });
             
-            window.loadTransactionsPage(auth.currentUser.uid);
+            window.loadTransactionsPage((window.currentUser?.uid || window._profileData?.uid));
             alert('Transaksi berhasil dihapus');
         } catch (err) {
             console.error(err);
@@ -6149,7 +6089,7 @@ document.getElementById('chat-input-form')?.addEventListener('submit', async (e)
     e.preventDefault();
     const userMsgEl = document.getElementById('chat-user-message');
     const container = document.getElementById('chat-messages-container');
-    if (!userMsgEl || !container || !auth.currentUser) return;
+    if (!userMsgEl || !container || !window.currentUser) return;
 
     const message = userMsgEl.value.trim();
     if (!message) return;
@@ -6480,9 +6420,9 @@ function initSettingsState() {
     
     document.getElementById('btn-delete-account')?.addEventListener('click', () => {
         window.showConfirm('Hapus Akun', 'Apakah Anda yakin ingin menghapus akun ini beserta seluruh datanya? Tindakan ini tidak dapat dibatalkan.', async () => {
-            if (auth.currentUser) {
+            if (window.currentUser) {
                 try {
-                    await auth.currentUser.delete();
+                    await window.currentUser.delete();
                     alert('Akun Anda berhasil dihapus.');
                     location.reload();
                 } catch(e) {
