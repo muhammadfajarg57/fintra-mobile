@@ -1570,25 +1570,18 @@ export async function loadReportsPage(uid) {
     ];
 
     async function fetchAllData() {
-        const tQ = query(collection(db, 'transactions'), where('uid', '==', uid));
-        const tSnap = await getDocs(tQ);
-        rawTransactions = tSnap.docs.map(d => ({id: d.id, ...d.data()}));
-
-        const wQ = query(collection(db, 'wallets'), where('uid', '==', uid));
-        const wSnap = await getDocs(wQ);
-        rawWallets = wSnap.docs.map(d => ({id: d.id, ...d.data()}));
-
-        const pQ = query(collection(db, 'products'), where('uid', '==', uid));
-        const pSnap = await getDocs(pQ);
-        rawProducts = pSnap.docs.map(d => ({id: d.id, ...d.data()}));
-        
-        const ptQ = query(collection(db, 'partners'), where('uid', '==', uid));
-        const ptSnap = await getDocs(ptQ);
-        rawPartners = ptSnap.docs.map(d => ({id: d.id, ...d.data()}));
-
-        const rmQ = query(collection(db, 'raw_materials'), where('uid', '==', uid));
-        const rmSnap = await getDocs(rmQ);
-        rawMaterials = rmSnap.docs.map(d => ({id: d.id, ...d.data()}));
+        const [tRes, wRes, pRes, ptRes, rmRes] = await Promise.all([
+            apiFetch('/api/transactions'),
+            apiFetch('/api/wallets'),
+            apiFetch('/api/products'),
+            apiFetch('/api/partners'),
+            apiFetch('/api/raw-materials')
+        ]);
+        rawTransactions = tRes.data || [];
+        rawWallets = wRes.data || [];
+        rawProducts = pRes.data || [];
+        rawPartners = ptRes.data || [];
+        rawMaterials = rmRes.data || [];
     }
 
     function getFilteredData() {
@@ -4995,12 +4988,14 @@ window.populateTxCategoryDropdown = async function(type) {
     }
     
     try {
-        // Firebase dynamic import removed
-        const q = query(collection(db, 'tx_categories'), where('uid', '==', auth.currentUser.uid), where('type', '==', type));
-        
-const prodRes = await apiFetch('/api/products');
-window.posProducts = prodRes.data || [];
-
+        let customItems = [];
+        try {
+            const catRes = await apiFetch('/api/categories');
+            const categories = catRes.data || [];
+            customItems = categories.filter(c => c.type === 'tx_category').map(c => c.nama);
+        } catch(err) {
+            console.warn("Categories fetch error:", err);
+        }
         
         const allItems = [...new Set([...defaultItems, ...customItems])];
         window.txCategoryListCache = allItems;
@@ -5013,7 +5008,7 @@ window.posProducts = prodRes.data || [];
         if (selector) selector.value = '';
         
     } catch(e) {
-        console.error(e);
+        console.error("populateTxCategoryDropdown error:", e);
     }
 };
 
@@ -5023,12 +5018,14 @@ window.populateUnitDropdown = async function() {
     if (!select) return;
     
     try {
-        // Firebase dynamic import removed
-        const q = query(collection(db, 'product_units'), where('uid', '==', auth.currentUser.uid));
-        
-const prodRes = await apiFetch('/api/products');
-window.posProducts = prodRes.data || [];
-
+        let items = [];
+        try {
+            const catRes = await apiFetch('/api/categories');
+            const categories = catRes.data || [];
+            items = categories.filter(c => c.type === 'product_unit').map(c => c.nama);
+        } catch(err) {
+            console.warn("Units fetch error:", err);
+        }
         
         if (items.length === 0) {
             items = ['Pcs', 'Kg', 'Gram', 'Liter', 'Pack', 'Box', 'Botol', 'Porsi', 'Piring', 'Cup', 'Buah'];
@@ -5048,10 +5045,7 @@ window.posProducts = prodRes.data || [];
                     }
                     selectEl.value = val;
                     try {
-                        // Firebase dynamic import removed
-                        
-await apiFetch('/api/categories', { method: 'POST', body: JSON.stringify({ nama: val, type: 'product_unit' }) });
-
+                        await apiFetch('/api/categories', { method: 'POST', body: JSON.stringify({ nama: val, type: 'product_unit' }) });
                     } catch(err) { console.error("Error saving unit", err); }
                 }
             });
@@ -5435,12 +5429,16 @@ window.loadRawMaterialsPage = async function(uid) {
     if (!list) return;
 
     try {
-        // Firebase dynamic import removed
-        const q = query(collection(db, 'raw_materials'), where('uid', '==', uid));
-        
-const prodRes = await apiFetch('/api/products');
-window.posProducts = prodRes.data || [];
+        const res = await apiFetch('/api/raw-materials');
+        const rawMaterials = res.data || [];
 
+        let totalItems = rawMaterials.length;
+        let totalValue = 0;
+        rawMaterials.forEach(data => {
+            const stok = Number(data.stok || data.stok_aktif || 0);
+            const cost = Number(data.hpp_rata_rata || data.avg_cost || 0);
+            totalValue += (stok * cost);
+        });
 
         document.getElementById('stat-raw-items').textContent = totalItems;
         document.getElementById('stat-raw-value').textContent = formatRupiah(totalValue);
@@ -5607,15 +5605,14 @@ window.posProducts = prodRes.data || [];
 
             // Pop wallets
             try {
-                // Firebase dynamic import removed
                 const walletSelect = document.getElementById('raw-wallet-id');
                 if (walletSelect && auth.currentUser) {
-                    const wq = query(collection(db, 'wallets'), where('uid', '==', auth.currentUser.uid));
-                    const wSnapshot = await getDocs(wq);
+                    const wRes = await apiFetch('/api/wallets');
+                    const wallets = wRes.data || [];
                     let wHtml = '<option value="">Pilih Rekening / Kas</option>';
-                    wSnapshot.forEach(docSnap => {
-                        const data = docSnap.data();
-                        wHtml += `<option value="${docSnap.id}">${data.nama_rekening} - ${formatRupiah(data.saldo_terkini)}</option>`;
+                    wallets.forEach(w => {
+                        const name = w.nama || w.nama_rekening || 'Kas';
+                        wHtml += `<option value="${w.id}">${name} - ${formatRupiah(w.saldo_terkini || 0)}</option>`;
                     });
                     walletSelect.innerHTML = wHtml;
                 }
