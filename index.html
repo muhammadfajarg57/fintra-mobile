@@ -397,7 +397,7 @@
     <div class="flex min-h-screen w-full relative">
         
         <!-- Sidebar (PC/Desktop Only) -->
-        <aside id="desktop-sidebar" class="!hidden md:flex flex-col w-64 bg-surface border-r border-outline-variant/50 h-screen sticky top-0 p-5 shrink-0 z-40">
+        <aside id="desktop-sidebar" class="hidden md:flex flex-col w-64 bg-surface border-r border-outline-variant/50 h-screen sticky top-0 p-5 shrink-0 z-40">
             <!-- Brand Logo -->
             <div class="flex items-center gap-2 mb-8 px-2">
                 <svg viewBox="0 0 120 60" class="w-12 h-6 drop-shadow-sm" fill="none">
@@ -464,7 +464,7 @@
             
             <!-- Top Navigation Bar (Responsive) -->
             <header id="top-app-bar"
-                class="w-full sticky top-0 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/50 z-30 h-16 flex items-center transition-all" style="display: none;">
+                class="w-full sticky top-0 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/50 z-30 h-16 flex items-center transition-all">
                 <div class="w-full px-4 sm:px-6 lg:px-8 flex justify-between items-center h-full">
 
                     <!-- Mobile Left: Logo & Brand (hidden on md:) -->
@@ -499,7 +499,7 @@
 
             <!-- App Content Wrapper -->
             <main id="app-content" class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-28 md:pb-8 relative">
-                <div id="page-hello" class="page-container hidden animate-fade-in"></div>
+                <div id="page-hello" class="page-container hidden"></div>
                 <div id="page-signin" class="page-container hidden animate-fade-in"></div>
                 <div id="page-signup" class="page-container hidden animate-fade-in"></div>
                                 <div id="page-dashboard" class="page-container hidden animate-fade-in"></div>
@@ -516,7 +516,7 @@
 
             <!-- Bottom Navigation Bar (Mobile Only) -->
             <nav id="bottom-nav-bar"
-                class="fixed bottom-3 left-4 right-4 z-50 bg-surface/90 backdrop-blur-xl border border-outline-variant/30 flex justify-between items-center px-6 py-2.5 md:hidden shadow-lg rounded-full" style="display: none;">
+                class="fixed bottom-3 left-4 right-4 z-50 bg-surface/90 backdrop-blur-xl border border-outline-variant/30 flex justify-between items-center px-6 py-2.5 md:hidden shadow-lg rounded-full">
                 
                 <button id="nav-home"
                     class="flex items-center justify-center text-on-surface-variant p-2 transition-colors rounded-full hover:bg-surface-container">
@@ -644,19 +644,41 @@
 
                 <!-- Kategori & Satuan -->
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="space-y-1.5">
+                    <div class="space-y-1.5 relative">
                         <label class="block text-sm font-semibold text-on-surface-variant">Kategori *</label>
-                        <select id="raw-kategori" required class="w-full p-3.5 bg-surface-container-low border border-outline-variant/50 rounded-2xl focus:outline-none focus:border-primary transition-all text-sm font-bold text-on-surface cursor-pointer">
-                            <option value="">Pilih...</option>
-                            <!-- Populated by JS -->
-                        </select>
+                        <input type="hidden" id="raw-kategori" required>
+                        <div class="relative w-full" id="raw-kategori-wrapper">
+                            <input type="text" id="raw-kategori-selector" readonly placeholder="Pilih..." class="w-full p-3.5 pr-10 bg-surface-container-low border border-outline-variant/50 rounded-2xl focus:outline-none focus:border-primary transition-all text-sm font-bold text-on-surface cursor-pointer">
+                            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none transition-transform duration-200" id="raw-kategori-icon">expand_more</span>
+                            <div id="raw-kategori-dropdown" class="absolute top-full left-0 w-full mt-2 bg-surface rounded-[24px] shadow-[0_12px_40px_rgba(0,0,0,0.15)] border border-outline-variant/30 z-[90] hidden flex-col max-h-[290px] p-2.5 transition-all">
+                                <div class="p-1 mb-1.5 sticky top-0 bg-surface z-10">
+                                    <div class="relative flex items-center">
+                                        <span class="material-symbols-outlined absolute left-3.5 text-on-surface-variant/60 text-[20px] pointer-events-none">search</span>
+                                        <input type="text" id="raw-kategori-search" placeholder="Cari..." class="w-full bg-slate-100/90 border-none rounded-xl py-2 pl-9 pr-3 text-xs font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-on-surface-variant/50 transition-all">
+                                    </div>
+                                </div>
+                                <div class="overflow-y-auto no-scrollbar flex-1 flex flex-col gap-1 pr-0.5" id="raw-kategori-list">
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="space-y-1.5">
+                    <div class="space-y-1.5 relative">
                         <label class="block text-sm font-semibold text-on-surface-variant">Satuan *</label>
-                        <select id="raw-satuan" required class="w-full p-3.5 bg-surface-container-low border border-outline-variant/50 rounded-2xl focus:outline-none focus:border-primary transition-all text-sm font-bold text-on-surface cursor-pointer">
-                            <option value="">Pilih...</option>
-                            <!-- Populated by JS -->
-                        </select>
+                        <input type="hidden" id="raw-satuan" required>
+                        <div class="relative w-full" id="raw-satuan-wrapper">
+                            <input type="text" id="raw-satuan-selector" readonly placeholder="Pilih..." class="w-full p-3.5 pr-10 bg-surface-container-low border border-outline-variant/50 rounded-2xl focus:outline-none focus:border-primary transition-all text-sm font-bold text-on-surface cursor-pointer">
+                            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none transition-transform duration-200" id="raw-satuan-icon">expand_more</span>
+                            <div id="raw-satuan-dropdown" class="absolute top-full left-0 w-full mt-2 bg-surface rounded-[24px] shadow-[0_12px_40px_rgba(0,0,0,0.15)] border border-outline-variant/30 z-[90] hidden flex-col max-h-[290px] p-2.5 transition-all">
+                                <div class="p-1 mb-1.5 sticky top-0 bg-surface z-10">
+                                    <div class="relative flex items-center">
+                                        <span class="material-symbols-outlined absolute left-3.5 text-on-surface-variant/60 text-[20px] pointer-events-none">search</span>
+                                        <input type="text" id="raw-satuan-search" placeholder="Cari..." class="w-full bg-slate-100/90 border-none rounded-xl py-2 pl-9 pr-3 text-xs font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-on-surface-variant/50 transition-all">
+                                    </div>
+                                </div>
+                                <div class="overflow-y-auto no-scrollbar flex-1 flex flex-col gap-1 pr-0.5" id="raw-satuan-list">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1185,7 +1207,7 @@
                     </div>
                 </div>
 
-                <div class="bg-surface-container-low p-4 rounded-2xl border border-outline-variant/30 space-y-4">
+                <div class="bg-surface-container-low p-4 rounded-2xl border border-outline-variant/30 space-y-4 overflow-visible relative z-20">
                     <div>
                         <label class="block text-xs font-bold text-on-surface-variant mb-1">Barcode (Opsional)</label>
                         <div class="flex gap-2">
@@ -1204,20 +1226,42 @@
                             class="w-full bg-surface rounded-xl p-3 text-sm font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 border border-outline-variant/50 transition-all"
                             placeholder="Contoh: Kopi Susu Aren">
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
+                    <div class="grid grid-cols-2 gap-4 overflow-visible relative z-30">
+                        <div class="relative z-30">
                             <label class="block text-xs font-bold text-on-surface-variant mb-1">Kategori *</label>
-                            <select id="prod-kategori" required
-                                class="w-full bg-surface rounded-xl p-3 text-sm font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 border border-outline-variant/50 transition-all cursor-pointer">
-                                <option value="">Pilih...</option>
-                            </select>
+                            <input type="hidden" id="prod-kategori" required>
+                            <div class="relative w-full z-30" id="prod-kategori-wrapper">
+                                <input type="text" id="prod-kategori-selector" readonly placeholder="Pilih..." class="w-full bg-surface rounded-xl p-3 pr-10 text-sm font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 border border-outline-variant/50 transition-all cursor-pointer">
+                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none transition-transform duration-200" id="prod-kategori-icon">expand_more</span>
+                                <div id="prod-kategori-dropdown" class="absolute bottom-full left-0 w-full mb-2 bg-surface rounded-[24px] shadow-[0_12px_40px_rgba(0,0,0,0.15)] border border-outline-variant/30 z-[90] hidden flex-col max-h-[290px] p-2.5 transition-all">
+                                    <div class="p-1 mb-1.5 sticky top-0 bg-surface z-10">
+                                        <div class="relative flex items-center">
+                                            <span class="material-symbols-outlined absolute left-3.5 text-on-surface-variant/60 text-[20px] pointer-events-none">search</span>
+                                            <input type="text" id="prod-kategori-search" placeholder="Cari..." class="w-full bg-slate-100/90 border-none rounded-xl py-2 pl-9 pr-3 text-xs font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-on-surface-variant/50 transition-all">
+                                        </div>
+                                    </div>
+                                    <div class="overflow-y-auto no-scrollbar flex-1 flex flex-col gap-1 pr-0.5" id="prod-kategori-list">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div>
+                        <div class="relative z-20">
                             <label class="block text-xs font-bold text-on-surface-variant mb-1">Satuan *</label>
-                            <select id="prod-unit" required
-                                class="w-full bg-surface rounded-xl p-3 text-sm font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 border border-outline-variant/50 transition-all cursor-pointer">
-                                <option value="">Pilih...</option>
-                            </select>
+                            <input type="hidden" id="prod-unit" required>
+                            <div class="relative w-full z-20" id="prod-unit-wrapper">
+                                <input type="text" id="prod-unit-selector" readonly placeholder="Pilih..." class="w-full bg-surface rounded-xl p-3 pr-10 text-sm font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 border border-outline-variant/50 transition-all cursor-pointer">
+                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none transition-transform duration-200" id="prod-unit-icon">expand_more</span>
+                                <div id="prod-unit-dropdown" class="absolute bottom-full left-0 w-full mb-2 bg-surface rounded-[24px] shadow-[0_12px_40px_rgba(0,0,0,0.15)] border border-outline-variant/30 z-[90] hidden flex-col max-h-[290px] p-2.5 transition-all">
+                                    <div class="p-1 mb-1.5 sticky top-0 bg-surface z-10">
+                                        <div class="relative flex items-center">
+                                            <span class="material-symbols-outlined absolute left-3.5 text-on-surface-variant/60 text-[20px] pointer-events-none">search</span>
+                                            <input type="text" id="prod-unit-search" placeholder="Cari..." class="w-full bg-slate-100/90 border-none rounded-xl py-2 pl-9 pr-3 text-xs font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-on-surface-variant/50 transition-all">
+                                        </div>
+                                    </div>
+                                    <div class="overflow-y-auto no-scrollbar flex-1 flex flex-col gap-1 pr-0.5" id="prod-unit-list">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1280,70 +1324,53 @@
         </div>
     </div>
 
-    <!-- Modal Restock / Produksi -->
-    <div id="modal-restock"
+    <!-- Modal Produksi (Membuat Sendiri) -->
+    <div id="modal-produksi"
         class="fixed inset-0 z-[70] bg-[#0f172a]/20 backdrop-blur-sm hidden flex items-center justify-center opacity-0 transition-opacity duration-300 p-4">
         <div
             class="bg-surface w-full max-w-4xl rounded-3xl p-6 md:p-8 shadow-float flex flex-col max-h-[95vh] overflow-y-auto no-scrollbar transform scale-95 transition-transform duration-300">
             <!-- Header -->
             <div class="flex justify-between items-center mb-6">
                 <div>
-                    <h3 class="font-heading font-bold text-xl text-on-surface">Produksi & Restock Stok</h3>
-                    <p class="text-xs text-on-surface-variant mt-1">Hitung HPP bahan baku untuk menentukan harga jual.</p>
+                    <h3 class="font-heading font-bold text-xl text-on-surface">Produksi Stok Produk (Buat Sendiri)</h3>
+                    <p class="text-xs text-on-surface-variant mt-1">Hitung HPP bahan baku yang digunakan untuk menentukan harga jual.</p>
                 </div>
-                <button id="close-restock" class="text-on-surface-variant hover:text-on-surface transition-colors">
+                <button onclick="closeModal(document.getElementById('modal-produksi'))" class="text-on-surface-variant hover:text-on-surface transition-colors">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
             
-            <form id="form-restock" class="space-y-6">
-                <!-- Two Column Layout on Desktop -->
+            <form id="form-produksi" class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                     
                     <!-- Left Column: Product Info & Source -->
                     <div class="space-y-5">
-                        
-                        <!-- Pilihan Sumber Stok -->
-                        <div class="bg-surface-variant/10 rounded-2xl p-5 border border-outline-variant/30 space-y-4">
-                            <h4 class="text-sm font-bold text-on-surface uppercase tracking-wider">Metode Restok</h4>
-                            <div class="flex gap-4">
-                                <label class="flex items-center gap-2 cursor-pointer group">
-                                    <input type="radio" name="restock-method" value="produksi" checked class="w-4 h-4 text-primary bg-surface border-outline-variant focus:ring-primary focus:ring-2">
-                                    <span class="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">Produksi Sendiri</span>
-                                </label>
-                                <label class="flex items-center gap-2 cursor-pointer group">
-                                    <input type="radio" name="restock-method" value="beli_jadi" class="w-4 h-4 text-primary bg-surface border-outline-variant focus:ring-primary focus:ring-2">
-                                    <span class="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">Beli Jadi (Kulakan)</span>
-                                </label>
-                            </div>
-                        </div>
-
                         <div class="bg-surface-variant/10 rounded-2xl p-5 border border-outline-variant/30 space-y-4">
                             <h4 class="text-sm font-bold text-on-surface uppercase tracking-wider">Informasi Produk</h4>
                             
-                            <div class="relative" id="restock-dropdown-wrapper">
+                            <div class="relative" id="produksi-dropdown-wrapper">
                                 <label class="block text-xs font-bold text-on-surface-variant mb-1">Pilih Produk</label>
-                                <input type="hidden" id="restock-product-id" required>
-                                <div id="restock-product-selector" tabindex="0" class="w-full bg-surface border border-outline-variant/55 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm cursor-pointer flex justify-between items-center">
-                                    <span id="restock-product-display" class="flex items-center gap-2 text-on-surface-variant">Pilih produk...</span>
-                                    <span class="material-symbols-outlined text-[20px] transition-transform duration-200" id="restock-dropdown-icon">expand_more</span>
+                                <input type="hidden" id="produksi-product-id" required>
+                                <div id="produksi-product-selector" tabindex="0" class="w-full bg-surface border border-outline-variant/55 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm cursor-pointer flex justify-between items-center">
+                                    <span id="produksi-product-display" class="flex items-center gap-2 text-on-surface-variant">Pilih produk...</span>
+                                    <span class="material-symbols-outlined text-[20px] transition-transform duration-200" id="produksi-dropdown-icon">expand_more</span>
                                 </div>
-                                <div id="restock-product-dropdown" class="absolute top-full left-0 w-full mt-1 bg-surface rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.1)] z-[80] hidden flex-col max-h-[280px]">
+                                <div id="produksi-product-dropdown" class="absolute top-full left-0 w-full mt-1 bg-surface rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.1)] z-[80] hidden flex-col max-h-[280px]">
                                     <div class="p-2 border-b border-outline-variant sticky top-0 bg-surface z-10 rounded-t-2xl">
                                         <div class="relative">
                                             <span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
-                                            <input type="text" id="restock-product-search" autocomplete="off" class="w-full bg-surface-variant rounded-2xl pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Cari produk (nama/sku)...">
+                                            <input type="text" id="produksi-product-search" autocomplete="off" class="w-full bg-surface-variant rounded-2xl pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Cari produk (nama/sku)...">
                                         </div>
                                     </div>
-                                    <div id="restock-product-list" class="overflow-y-auto no-scrollbar p-1">
+                                    <div id="produksi-product-list" class="overflow-y-auto no-scrollbar p-1">
                                         <!-- list generated by JS -->
                                     </div>
                                 </div>
                             </div>
                             
                             <div>
-                                <label class="block text-xs font-bold text-on-surface-variant mb-1">Jumlah Produksi / Restock (Qty)</label>
-                                <input type="number" id="restock-qty" min="1" required
+                                <label class="block text-xs font-bold text-on-surface-variant mb-1">Jumlah Produksi (Qty)</label>
+                                <input type="number" id="produksi-qty" min="1" required
                                     class="w-full bg-surface border border-outline-variant/55 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm"
                                     placeholder="Misal: 100">
                             </div>
@@ -1354,12 +1381,12 @@
                             
                             <div>
                                 <label class="block text-xs font-bold text-on-surface-variant mb-1">Tanggal Produksi</label>
-                                <input type="datetime-local" id="restock-date" required
+                                <input type="datetime-local" id="produksi-date" required
                                     class="w-full bg-surface border border-outline-variant/55 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-on-surface-variant mb-1">Potong Kas Dari (Jika ada Biaya Tambahan / Beli Jadi)</label>
-                                <select id="restock-wallet-id"
+                                <label class="block text-xs font-bold text-on-surface-variant mb-1">Potong Kas Dari (Jika ada Biaya Tambahan Tunai)</label>
+                                <select id="produksi-wallet-id"
                                     class="w-full bg-surface border border-outline-variant/55 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm">
                                     <option value="">Pilih dompet / rekening...</option>
                                 </select>
@@ -1369,16 +1396,16 @@
                     
                     <!-- Right Column: HPP Components & Pricing -->
                     <div class="space-y-5">
-                        <div id="restock-hpp-container" class="rounded-2xl p-5 bg-surface-variant/20 border border-outline-variant/30 space-y-4">
+                        <div id="produksi-hpp-container" class="rounded-2xl p-5 bg-surface-variant/20 border border-outline-variant/30 space-y-4">
                             <div class="flex justify-between items-center">
                                 <label class="block text-sm font-bold text-on-surface">Komponen HPP (Bahan Baku)</label>
-                                <button type="button" id="btn-add-hpp-row"
+                                <button type="button" id="btn-produksi-add-hpp-row"
                                     class="text-primary text-xs font-bold px-3 py-1.5 bg-secondary-container rounded-2xl hover:bg-secondary hover:text-white transition-colors">
                                     + Tambah Baris
                                 </button>
                             </div>
 
-                            <div id="hpp-rows-container" class="space-y-3">
+                            <div id="produksi-hpp-rows-container" class="space-y-3">
                                 <!-- Dynamic rows will be inserted here -->
                                 <div class="flex gap-2 hpp-row">
                                     <select class="hpp-raw-select w-2/3 bg-surface border border-outline-variant/55 rounded-2xl p-2 text-sm focus:border-primary" required>
@@ -1397,20 +1424,13 @@
                             <div class="mt-4 pt-4 border-t border-outline-variant space-y-2">
                                 <div class="flex justify-between items-center">
                                     <span class="text-sm font-bold text-on-surface-variant">Total HPP Produksi:</span>
-                                    <span class="text-lg font-bold text-error" id="restock-total-hpp">Rp 0</span>
+                                    <span class="text-lg font-bold text-error" id="produksi-total-hpp">Rp 0</span>
                                 </div>
                                 <div class="flex justify-between items-center">
                                     <span class="text-xs font-semibold text-on-surface-variant">HPP Satuan (Per Produk):</span>
-                                    <span class="text-sm font-bold text-on-surface" id="restock-hpp-satuan">Rp 0</span>
+                                    <span class="text-sm font-bold text-on-surface" id="produksi-hpp-satuan">Rp 0</span>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div id="restock-beli-container" class="rounded-2xl p-5 bg-surface-variant/20 border border-outline-variant/30 space-y-4 hidden">
-                            <label class="block text-sm font-bold text-on-surface">Harga Beli Satuan (Kulakan)</label>
-                            <input type="number" id="restock-harga-beli" min="0"
-                                class="w-full bg-surface border border-outline-variant/55 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm"
-                                placeholder="Rp">
                         </div>
 
                         <div class="bg-primary/5 rounded-2xl p-5 border border-primary/20 space-y-4">
@@ -1419,9 +1439,9 @@
                             <div class="flex justify-between items-center bg-primary/10 rounded-2xl p-4 border border-primary/20">
                                 <div>
                                     <label class="block text-xs font-bold text-primary mb-1">Rekomendasi Harga Jual</label>
-                                    <div class="text-xl font-heading font-bold text-primary" id="restock-rekomendasi-harga">Rp 0</div>
+                                    <div class="text-xl font-heading font-bold text-primary" id="produksi-rekomendasi-harga">Rp 0</div>
                                 </div>
-                                <select id="restock-margin" class="bg-white/80 dark:bg-slate-800 text-primary text-xs font-bold p-2 rounded-xl border border-primary/20 focus:outline-none cursor-pointer">
+                                <select id="produksi-margin" class="bg-white/80 dark:bg-slate-800 text-primary text-xs font-bold p-2 rounded-xl border border-primary/20 focus:outline-none cursor-pointer">
                                     <option value="10">Margin 10%</option>
                                     <option value="20">Margin 20%</option>
                                     <option value="30">Margin 30%</option>
@@ -1433,19 +1453,128 @@
                             </div>
                             
                             <div>
-                                <label class="block text-xs font-bold text-on-surface-variant mb-1">Tetapkan Harga Jual Satuan</label>
-                                <input type="text" inputmode="numeric" id="restock-harga-jual" required
-                                    class="w-full bg-surface border border-outline-variant/55 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm"
-                                    placeholder="Sesuai keinginan">
+                                <label class="block text-xs font-bold text-on-surface-variant mb-1">Tetapkan Harga Jual Satuan (Pukul Rata)</label>
+                                <input type="text" inputmode="numeric" id="produksi-harga-jual" required
+                                    class="w-full bg-surface border border-outline-variant/55 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm">
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Submit button full width at bottom -->
-                <button type="submit" id="btn-save-restock"
+                <button type="submit" id="btn-save-produksi"
                     class="w-full py-4 bg-primary hover:bg-primary-hover text-white rounded-2xl font-bold text-[15px] shadow-md transition-colors flex justify-center items-center">
                     Simpan Produksi & Update Stok
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Restok (Beli Jadi Tanpa Bahan Baku) -->
+    <div id="modal-restock"
+        class="fixed inset-0 z-[70] bg-[#0f172a]/20 backdrop-blur-sm hidden flex items-center justify-center opacity-0 transition-opacity duration-300 p-4">
+        <div
+            class="bg-surface w-full max-w-md rounded-3xl p-6 shadow-float flex flex-col max-h-[90vh] overflow-y-auto no-scrollbar transform scale-95 transition-transform duration-300">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="font-heading font-bold text-xl text-on-surface">Restok Produk (Beli Barang Jadi)</h3>
+                    <p class="text-xs text-on-surface-variant mt-1">Beli produk yang sudah jadi langsung tanpa mengolah bahan baku.</p>
+                </div>
+                <button onclick="closeModal(document.getElementById('modal-restock'))" class="text-on-surface-variant hover:text-on-surface transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            
+            <form id="form-restock" class="space-y-4">
+                <div class="relative" id="restock-dropdown-wrapper">
+                    <label class="block text-xs font-bold text-on-surface-variant mb-1">Pilih Produk</label>
+                    <input type="hidden" id="restock-product-id" required>
+                    <div id="restock-product-selector" tabindex="0" class="w-full bg-surface border border-outline-variant/55 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm cursor-pointer flex justify-between items-center">
+                        <span id="restock-product-display" class="flex items-center gap-2 text-on-surface-variant">Pilih produk...</span>
+                        <span class="material-symbols-outlined text-[20px] transition-transform duration-200" id="restock-dropdown-icon">expand_more</span>
+                    </div>
+                    <div id="restock-product-dropdown" class="absolute top-full left-0 w-full mt-1 bg-surface rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.1)] z-[80] hidden flex-col max-h-[250px]">
+                        <div class="p-2 border-b border-outline-variant sticky top-0 bg-surface z-10 rounded-t-2xl">
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+                                <input type="text" id="restock-product-search" autocomplete="off" class="w-full bg-surface-variant rounded-2xl pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Cari produk...">
+                            </div>
+                        </div>
+                        <div id="restock-product-list" class="overflow-y-auto no-scrollbar p-1">
+                            <!-- list generated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-on-surface-variant mb-1">Jumlah Beli (Qty)</label>
+                        <input type="number" id="restock-qty" min="1" required
+                            class="w-full bg-surface border border-outline-variant/55 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm"
+                            placeholder="Contoh: 50">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-on-surface-variant mb-1">Total Harga Beli (Rp)</label>
+                        <input type="text" inputmode="numeric" id="restock-total-harga-beli" required
+                            class="w-full bg-surface border border-outline-variant/55 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm"
+                            placeholder="Rp">
+                    </div>
+                </div>
+
+                <div class="p-3 bg-secondary-container rounded-2xl flex justify-between items-center text-xs">
+                    <span class="font-semibold text-on-surface-variant">HPP Satuan Terhitung:</span>
+                    <span class="font-bold text-primary" id="restock-hpp-satuan-display">Rp 0</span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-on-surface-variant mb-1">Bayar / Potong Kas Dari</label>
+                    <select id="restock-wallet-id" required
+                        class="w-full bg-surface border border-outline-variant/55 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm">
+                        <option value="">Pilih dompet / rekening...</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-on-surface-variant mb-1">Tanggal Beli</label>
+                        <input type="datetime-local" id="restock-date" required
+                            class="w-full bg-surface border border-outline-variant/55 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-on-surface-variant mb-1">Keterangan (Opsional)</label>
+                        <input type="text" id="restock-catatan"
+                            class="w-full bg-surface border border-outline-variant/55 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm"
+                            placeholder="Catatan belanja...">
+                    </div>
+                </div>
+
+                <div class="bg-primary/5 rounded-2xl p-4 border border-primary/20 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <label class="block text-xs font-bold text-primary">Rekomendasi Harga Jual</label>
+                            <div class="text-lg font-heading font-bold text-primary" id="restock-rekomendasi-harga">Rp 0</div>
+                        </div>
+                        <select id="restock-margin" class="bg-white text-primary text-xs font-bold p-2 rounded-xl border border-primary/20 cursor-pointer">
+                            <option value="10">Margin 10%</option>
+                            <option value="20">Margin 20%</option>
+                            <option value="30">Margin 30%</option>
+                            <option value="40" selected>Margin 40%</option>
+                            <option value="50">Margin 50%</option>
+                            <option value="75">Margin 75%</option>
+                            <option value="100">Margin 100%</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-on-surface-variant mb-1">Tetapkan Harga Jual Satuan (Pukul Rata)</label>
+                        <input type="text" inputmode="numeric" id="restock-harga-jual" required
+                            class="w-full bg-surface border border-outline-variant/55 rounded-2xl p-3 text-sm text-on-surface focus:outline-none focus:border-primary shadow-sm">
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-save-restock"
+                    class="w-full mt-2 py-4 bg-primary hover:bg-primary-hover text-white rounded-2xl font-bold text-[15px] shadow-md transition-colors flex justify-center items-center">
+                    Simpan Restok & Update Stok
                 </button>
             </form>
         </div>
@@ -1951,16 +2080,30 @@
             if (now - lastTouchEnd <= 300) { e.preventDefault(); }
             lastTouchEnd = now;
         }, false);
-        // Remove splash screen when app is ready
-        window.addEventListener('load', function() {
-            setTimeout(function() {
+        // Reliable splash screen removal with readyState check and safety fallback
+        function triggerSplashRemoval() {
+            if (window.hideSplashScreen) {
+                window.hideSplashScreen();
+            } else {
                 const splash = document.getElementById('app-splash-screen');
-                if (splash) {
+                if (splash && !splash.classList.contains('fade-out')) {
                     splash.classList.add('fade-out');
-                    setTimeout(function() { splash.remove(); }, 500);
+                    setTimeout(function() { 
+                        if (splash && splash.parentNode) splash.parentNode.removeChild(splash); 
+                    }, 500);
                 }
-            }, 300);
-        });
+            }
+        }
+
+        if (document.readyState === 'complete') {
+            setTimeout(triggerSplashRemoval, 100);
+        } else {
+            window.addEventListener('load', function() {
+                setTimeout(triggerSplashRemoval, 100);
+            });
+            // Safety fallback: guaranteed removal within 1 second max
+            setTimeout(triggerSplashRemoval, 1000);
+        }
     </script>
 
     <!-- PWA Service Worker Registration -->
